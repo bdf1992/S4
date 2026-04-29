@@ -2,16 +2,38 @@
 # hook_event_decl collector. Lines starting with '#' and blank lines are
 # ignored. One event name per line.
 #
-# This file is the leash's reference for what hook events are recognized.
-# Adding a new event here is a deliberate, file-level edit; the collector
-# re-emits its data points the next time it runs and the orchestration's
-# event-validity check sees the new event automatically.
-PreToolUse
-PostToolUse
-Notification
-UserPromptSubmit
-Stop
-SubagentStop
-PreCompact
+# Source of truth (verified 2026-04-29 via direct WebFetch):
+#   https://code.claude.com/docs/en/hooks
+#
+# Adding/removing an event here is a deliberate, file-level edit; the
+# collector re-emits its data points the next time it runs and the
+# orchestration's event-validity check sees the new event automatically.
 SessionStart
+Setup
+UserPromptSubmit
+UserPromptExpansion
+PreToolUse
+PermissionRequest
+PermissionDenied
+PostToolUse
+PostToolUseFailure
+PostToolBatch
+Notification
+SubagentStart
+SubagentStop
+TaskCreated
+TaskCompleted
+Stop
+StopFailure
+TeammateIdle
+InstructionsLoaded
+ConfigChange
+CwdChanged
+FileChanged
+WorktreeCreate
+WorktreeRemove
+PreCompact
+PostCompact
+Elicitation
+ElicitationResult
 SessionEnd

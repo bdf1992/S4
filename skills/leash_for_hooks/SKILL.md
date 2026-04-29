@@ -1,15 +1,20 @@
 ---
 name: leash-for-hooks
 description: Generate a ladder-disciplined proposal for a Claude Code settings.json hook. Walks all four standard hook-config scopes (user, user-local, project, project-local), fits two 0.2 signals (hook_collision, emission_readiness) on the resulting datasets, runs the candidate through three declared decision points, and emits a bundle directory containing the candidate hook plus a manifest enumerating every component depended on. The bundle is claimed "0.4" only when the emission_readiness signal returns "ready" — otherwise it is honestly emitted as a sub-0.4 candidate with a gap_record naming what's missing. The leash carries a three-position toggle (on/off/scoped) read from `leash_state.json` and consulted before any decision point fires, so the operator can disengage the leash on trusted surfaces and tighten it on unfamiliar ones. Built bottom-up under foundations/{data-point, collection-program, pointer, zero-four}.md; produces sibling leashes for other Claude Code harness surfaces under the same skeleton (see recursion-seam.md).
-license: MIT
-metadata:
-  author: zero-four-experiment
-  version: 0.1.0
-  category: harness-control
-  pattern: ladder-disciplined-leash
-  rides_under: claude-code
-  surface: settings.json/hooks
+when_to_use: When the operator wants a hook proposal verified against the existing settings.json corpus and the bedrock ladder before adding it to settings.json. Defaults to read-only verification; only writes a bundle directory under outputs/ and (on candidate emission) a proposal under exemplars/proposed/. Do NOT use to write hooks to settings.json directly — the leash produces *proposals*, not edits.
+argument-hint: "[run|verify] [<candidate.json>|<bundle_dir>]"
+allowed-tools: Bash, Read
 ---
+
+<!-- Frontmatter conforms to the Anthropic Agent Skill spec
+     (https://code.claude.com/docs/en/skills, verified 2026-04-29).
+     Earlier drafts of this file carried a `metadata:` block with
+     author/version/category/pattern/rides_under/surface — none of
+     those are recognized fields in the spec. The information that
+     was load-bearing (the surface this leash targets) is captured
+     in the body below; author/version are git history concerns. -->
+
+> **About this skill** — surface: `settings.json/hooks` · rides under: Claude Code · category: harness-control · pattern: ladder-disciplined-leash. License: MIT.
 
 # leash-for-hooks
 
