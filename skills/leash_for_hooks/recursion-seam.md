@@ -48,7 +48,7 @@ Each surface has at least one signal that answers "does this candidate collide w
 - `PROBES` — at least 2 (one collision, one clear).
 - `run_probes()` — wraps the literal probe set for verify.py.
 
-The verdict enum is per-surface but always small. `signals/emission_readiness.py` is shared verbatim — its `MIN_EXEMPLARS = 3` rule is the same regardless of which surface the leash targets, because what it measures is "do we have enough exemplar bundle states yet?", not anything surface-specific.
+The verdict enum is per-surface but always small. `signals/emission_readiness.py` is shared verbatim — its `MIN_EXEMPLARS = 50` rule is the same regardless of which surface the leash targets, because what it measures is "do we have enough exemplar bundle states yet?", not anything surface-specific.
 
 ### 4. The orchestration's DECISION_POINTS (analogous to `orchestrate.py`)
 

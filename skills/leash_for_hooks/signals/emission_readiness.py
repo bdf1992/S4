@@ -22,7 +22,7 @@ from __future__ import annotations
 SIGNAL_ID = "emission_readiness"
 TRAINING_DATASET_KIND = "exemplar_bundle_state"
 VERDICT_ENUM = ("ready", "not_ready")
-MIN_EXEMPLARS = 3
+MIN_EXEMPLARS = 50
 
 
 def fit(training_rows: list[dict]) -> dict:
@@ -68,6 +68,20 @@ def evaluate(bundle_state: dict, *, fitted: dict, training_rows: list[dict]) -> 
             "gap_record": None}
 
 
+# Probes test the signal's logic, not a specific threshold value, so they
+# generate training data parameterized by MIN_EXEMPLARS — bumping the
+# threshold should not require rewriting the probes.
+def _cycle(rows: list[dict], n: int) -> list[dict]:
+    return [rows[i % len(rows)] for i in range(n)]
+
+
+_BASE_TRAINING = [
+    {"value": {"dataset_sizes": {"hook_config": 5}}},
+    {"value": {"dataset_sizes": {"hook_config": 7}}},
+    {"value": {"dataset_sizes": {"hook_config": 10}}},
+]
+
+
 PROBES: list[dict] = [
     {
         "name": "degenerate_fit_returns_not_ready",
@@ -77,21 +91,13 @@ PROBES: list[dict] = [
     },
     {
         "name": "non_degenerate_with_shortfall_returns_not_ready",
-        "training": [
-            {"value": {"dataset_sizes": {"hook_config": 5}}},
-            {"value": {"dataset_sizes": {"hook_config": 7}}},
-            {"value": {"dataset_sizes": {"hook_config": 10}}},
-        ],
+        "training": _cycle(_BASE_TRAINING, MIN_EXEMPLARS),
         "bundle_state": {"dataset_sizes": {"hook_config": 2}, "all_collectors_passed": True},
         "expected_verdict": "not_ready",
     },
     {
         "name": "non_degenerate_clean_returns_ready",
-        "training": [
-            {"value": {"dataset_sizes": {"hook_config": 5}}},
-            {"value": {"dataset_sizes": {"hook_config": 7}}},
-            {"value": {"dataset_sizes": {"hook_config": 10}}},
-        ],
+        "training": _cycle(_BASE_TRAINING, MIN_EXEMPLARS),
         "bundle_state": {"dataset_sizes": {"hook_config": 8}, "all_collectors_passed": True},
         "expected_verdict": "ready",
     },

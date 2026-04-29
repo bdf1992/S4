@@ -107,12 +107,12 @@ The orchestration consults exactly these fences in this order. `verify.py` struc
 - **No LLM in the bedrock.** The 0.1 layer (collectors, resolvers, validators) contains no model call. The 0.3 layer can be invoked by an LLM (Claude Code itself), but the orchestration source it executes is not generative — it consults declared fences and branches deterministically.
 - **Honest verdicts only.** A first-run leash with no exemplar bundles emits a `"candidate"` claim, not `"0.4"`. Promoting that claim requires real exemplars, accumulated by the human via the promotion protocol in [collectors/exemplar_bundle_state.py](collectors/exemplar_bundle_state.py).
 - **Audit budgets are load-bearing.** Collectors ≤ 80 lines of substantive code. Resolvers ≤ 60. Orchestration ≤ 150. Verify ≤ 200. The smallness is what makes a quiet rewrite visible in diff.
-- **`MIN_EXEMPLARS = 3`** in [signals/emission_readiness.py](signals/emission_readiness.py) is the only authored number in the bedrock. Everything else is fitted to data. Changing it is a deliberate, file-level edit.
+- **`MIN_EXEMPLARS = 50`** in [signals/emission_readiness.py](signals/emission_readiness.py) is the only authored number in the bedrock. Everything else is fitted to data. Changing it is a deliberate, file-level edit. (Bootstrap value of 3 was too permissive — a 0.4 claim sitting on 3 exemplars is trivially game-able. 50 fences emission until the corpus is real.)
 
 ## Levels
 
 - **v0.1 (current)** — manual run/verify. The skill is invoked from the command line; outputs are written to disk; promotion of exemplars is a manual file-copy step. One harness surface (`settings.json` hooks). First-run candidates only; no 0.4 emissions yet because the exemplar dataset is empty.
-- **v0.2** — exemplar accretion. Once `exemplars/promoted/` has ≥ 3 entries, `emission_readiness` can fire `ready` and bundles can claim `"0.4"`. The leash is invoked across more candidate hooks; the dataset of `hook_config` data points grows as users configure more hooks; collision signals get sharper.
+- **v0.2** — exemplar accretion. Once `exemplars/promoted/` has ≥ `MIN_EXEMPLARS` entries (currently 50), `emission_readiness` can fire `ready` and bundles can claim `"0.4"`. The leash is invoked across more candidate hooks; the dataset of `hook_config` data points grows as users configure more hooks; collision signals get sharper.
 - **v0.3** — sibling leashes. The skeleton in this skill spawns leashes for other Claude Code harness surfaces (slash commands, MCP wirings, CLAUDE.md sections, agent definitions). Each new leash bedrock-conforming under the same rules; the foundations/ directory is shared. See [recursion-seam.md](recursion-seam.md).
 
 ## Files
