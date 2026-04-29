@@ -1,6 +1,6 @@
 ---
 name: leash-for-hooks
-description: Generate a ladder-disciplined proposal for a Claude Code settings.json hook. Walks all four standard hook-config scopes (user, user-local, project, project-local), fits two 0.2 signals (hook_collision, emission_readiness) on the resulting datasets, runs the candidate through three declared decision points, and emits a bundle directory containing the candidate hook plus a manifest enumerating every component depended on. The bundle is claimed "0.4" only when the emission_readiness signal returns "ready" — otherwise it is honestly emitted as a sub-0.4 candidate with a gap_record naming what's missing. Built bottom-up under foundations/{data-point, collection-program, pointer, zero-four}.md; produces sibling leashes for other Claude Code harness surfaces under the same skeleton (see recursion-seam.md).
+description: Generate a ladder-disciplined proposal for a Claude Code settings.json hook. Walks all four standard hook-config scopes (user, user-local, project, project-local), fits two 0.2 signals (hook_collision, emission_readiness) on the resulting datasets, runs the candidate through three declared decision points, and emits a bundle directory containing the candidate hook plus a manifest enumerating every component depended on. The bundle is claimed "0.4" only when the emission_readiness signal returns "ready" — otherwise it is honestly emitted as a sub-0.4 candidate with a gap_record naming what's missing. The leash carries a three-position toggle (on/off/scoped) read from `leash_state.json` and consulted before any decision point fires, so the operator can disengage the leash on trusted surfaces and tighten it on unfamiliar ones. Built bottom-up under foundations/{data-point, collection-program, pointer, zero-four}.md; produces sibling leashes for other Claude Code harness surfaces under the same skeleton (see recursion-seam.md).
 license: MIT
 metadata:
   author: zero-four-experiment
@@ -79,6 +79,8 @@ DECISION_POINTS = [
 
 The orchestration consults exactly these fences in this order. `verify.py` structurally checks both the order and the fence identifiers against the source.
 
+Before the decision points, a **toggle gate** (`toggle_check`) consults [leash_state.json](leash_state.json) via [lib/leash_state.py](lib/leash_state.py) and short-circuits to `claim: "unleashed"` when the operator has set the leash off, or scoped-off for this candidate's event. The toggle is operator-authored 0.1 config, not a per-surface decision point — `DECISION_POINTS` stays the per-surface bound and the toggle stays the cross-surface mechanism that recursion-seam.md reuses verbatim.
+
 ### 0.4 layer
 
 [verify.py](verify.py) is the grading walker. It runs steps 2–7 of [foundations/zero-four.md](../../foundations/zero-four.md)'s grading procedure: validates every collector and resolver via Foundation 2, runs every signal's probe set, validates every emitted data point against Foundation 1, structurally inspects orchestration source for declared decision-point coverage, and (when given an output bundle path) checks the bundle's manifest claim consistency and decision-point ordering against its log.
@@ -111,17 +113,38 @@ The orchestration consults exactly these fences in this order. `verify.py` struc
 
 ## Levels
 
-- **v0.1 (current)** — manual run/verify. The skill is invoked from the command line; outputs are written to disk; promotion of exemplars is a manual file-copy step. One harness surface (`settings.json` hooks). First-run candidates only; no 0.4 emissions yet because the exemplar dataset is empty.
+- **v0.1 (current)** — manual run/verify with toggle. The skill is invoked from the command line; outputs are written to disk; promotion of exemplars is a manual file-copy step. One harness surface (`settings.json` hooks). Toggle (on/off/scoped) honored via leash_state.json. First-run candidates only; no 0.4 emissions yet because the exemplar dataset is empty.
 - **v0.2** — exemplar accretion. Once `exemplars/promoted/` has ≥ `MIN_EXEMPLARS` entries (currently 50), `emission_readiness` can fire `ready` and bundles can claim `"0.4"`. The leash is invoked across more candidate hooks; the dataset of `hook_config` data points grows as users configure more hooks; collision signals get sharper.
 - **v0.3** — sibling leashes. The skeleton in this skill spawns leashes for other Claude Code harness surfaces (slash commands, MCP wirings, CLAUDE.md sections, agent definitions). Each new leash bedrock-conforming under the same rules; the foundations/ directory is shared. See [recursion-seam.md](recursion-seam.md).
+
+## Toggle (leash_state)
+
+[leash_state.json](leash_state.json) carries the operator's toggle for this surface. Three states (per [CLAUDE.md:26](../../CLAUDE.md#L26)):
+
+| State | Meaning | Effect |
+| --- | --- | --- |
+| `"on"` | Leashed by default. | Every candidate runs through every declared decision point. |
+| `"off"` | Disengaged. | Candidates pass through; claim is `"unleashed"`. No surface decision points consulted. |
+| `"scoped"` | Per-event toggle. | Leashed for events listed in `scoped_on_events`; unleashed for everything else. |
+
+Examples:
+
+```json
+{ "state": "on" }
+{ "state": "off" }
+{ "state": "scoped", "scoped_on_events": ["PreToolUse", "UserPromptSubmit"] }
+```
+
+Default committed value is `"on"` — the safe default. Weakening to `"off"` or `"scoped"` is a deliberate operator action. The state is recorded in every emitted bundle's manifest.
 
 ## Files
 
 - [SKILL.md](SKILL.md) — this file.
 - [verify.py](verify.py) — the 0.4 grading walker.
 - [orchestrate.py](orchestrate.py) — the 0.3 entry point.
+- [leash_state.json](leash_state.json) — the operator toggle (on/off/scoped).
 - [recursion-seam.md](recursion-seam.md) — how this leash spawns siblings.
-- [lib/](lib/) — Foundation 1/2/3 implementations.
+- [lib/](lib/) — Foundation 1/2/3 implementations + `leash_state.py` (shared toggle validator).
 - [collectors/](collectors/) — 0.1 source-walking programs.
 - [resolvers/](resolvers/) — 0.1 pointer-resolution programs.
 - [signals/](signals/) — 0.2 fitted-on-data-points functions.

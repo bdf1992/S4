@@ -1,0 +1,63 @@
+"""leash_state — operator-authored toggle for the leash.
+
+The toggle has three states (CLAUDE.md:26):
+  - "on": every candidate runs through every declared decision point.
+  - "off": the leash is disengaged; candidates pass through with claim
+    "unleashed" and no decision points are consulted.
+  - "scoped": the leash is on for events listed in scoped_on_events,
+    off for everything else.
+
+The state is operator-authored and lives in leash_state.json at the
+skill root. It is NOT a 0.1 collected datum (there's no source to walk);
+it is 0.1 *config* — a parameter the orchestration consults before
+running its decision points. verify.py confirms the file's schema and
+that orchestrate.py consults it before evaluate.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+VALID_STATES = ("on", "off", "scoped")
+FILENAME = "leash_state.json"
+
+
+def validate(state: dict) -> tuple[bool, str]:
+    if not isinstance(state, dict):
+        return False, "not_a_dict"
+    if "state" not in state:
+        return False, "missing_state_field"
+    if state["state"] not in VALID_STATES:
+        return False, f"invalid_state:{state['state']!r}"
+    if state["state"] == "scoped":
+        if "scoped_on_events" not in state:
+            return False, "scoped_state_missing_scoped_on_events"
+        if not isinstance(state["scoped_on_events"], list):
+            return False, "scoped_on_events_not_list"
+        if not all(isinstance(e, str) for e in state["scoped_on_events"]):
+            return False, "scoped_on_events_contains_non_string"
+    return True, ""
+
+
+def read(skill_root: Path) -> dict:
+    path = skill_root / FILENAME
+    if not path.exists():
+        raise FileNotFoundError(f"leash_state file missing: {path}")
+    state = json.loads(path.read_text(encoding="utf-8"))
+    ok, reason = validate(state)
+    if not ok:
+        raise ValueError(f"leash_state invalid: {reason}")
+    return state
+
+
+def is_leashed(state: dict, candidate: dict) -> tuple[bool, str]:
+    """Given a validated state and a candidate, return (leashed, reason)."""
+    s = state["state"]
+    if s == "on":
+        return True, "state_on"
+    if s == "off":
+        return False, "state_off"
+    event = candidate.get("event")
+    if event in state.get("scoped_on_events", []):
+        return True, f"scoped_on_event:{event}"
+    return False, f"scoped_off_event:{event}"

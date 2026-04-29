@@ -22,7 +22,7 @@ from pathlib import Path
 
 from .collectors import (llm_sdk_denylist, hook_event_decl, hook_config,
                          exemplar_bundle_state)
-from .lib import data_point as dp
+from .lib import data_point as dp, leash_state as ls
 from .signals import hook_collision, emission_readiness
 
 DECISION_POINTS = [
@@ -62,6 +62,17 @@ def _decision(decision_id: str, fence_id: str, *, input_payload, result, branch:
 
 def evaluate_candidate(candidate: dict) -> tuple[list[dict], dict]:
     log: list[dict] = []
+    # Pre-decision toggle gate: consult the operator-authored leash_state.
+    # If unleashed, no decision point is consulted; the claim is "unleashed".
+    state = ls.read(SKILL_ROOT)
+    leashed, reason = ls.is_leashed(state, candidate)
+    log.append(_decision("toggle_check", "leash_state",
+                         input_payload={"event": candidate.get("event")},
+                         result={"leashed": leashed, "reason": reason, "state": state},
+                         branch="leashed" if leashed else "unleashed"))
+    if not leashed:
+        return log, {"verdict": "unleashed", "reason": reason,
+                     "candidate_hook": candidate, "leash_state": state}
     # Decision 1: event_validity (0.1 dataset membership)
     events = {r["value"]["event"] for r in dp.read_jsonl(DATASETS / "hook_event_decl.jsonl")}
     branch1 = "valid" if candidate["event"] in events else "unknown_event"
@@ -108,9 +119,10 @@ def emit_bundle(collector_summary: dict, log: list[dict], outcome: dict) -> Path
     (bdir / "candidate.json").write_text(json.dumps(outcome, indent=2, sort_keys=True), encoding="utf-8")
     dp.write_jsonl(bdir / "orchestration-log.jsonl", log)
     manifest = {
-        "claim": outcome["verdict"],  # "0.4" or "candidate" or "rejected"
+        "claim": outcome["verdict"],  # "0.4" | "candidate" | "rejected" | "unleashed"
         "collectors": collector_summary,
         "decision_points": [list(x) for x in DECISION_POINTS],
+        "leash_state": ls.read(SKILL_ROOT),
         "log_path": "orchestration-log.jsonl",
         "candidate_path": "candidate.json",
         "skill_root": str(SKILL_ROOT.relative_to(SKILL_ROOT.parents[1])),

@@ -24,6 +24,7 @@ from pathlib import Path
 from .collectors import (llm_sdk_denylist, hook_event_decl, hook_config,
                          exemplar_bundle_state)
 from .lib import audit, collection_program as cp, data_point as dp
+from .lib import leash_state as ls
 from .lib import pointer as ptr
 from .resolvers import collector as collector_resolver
 from .resolvers import data_point as data_point_resolver
@@ -131,13 +132,30 @@ def _check_orchestration_decision_points() -> list[dict]:
     fences = ["hook_event_decl", "hook_collision", "emission_readiness"]
     missing = [d for d in declared if f'"{d}"' not in src]
     missing_fences = [f for f in fences if f not in src]
+    # Toggle wiring: orchestrate must consult leash_state before decision points.
+    toggle_wired = ("leash_state" in src and "is_leashed" in src
+                    and "toggle_check" in src)
     ok, vios = audit.audit_program(SKILL / "orchestrate.py",
                                    llm_sdk_denylist=_denylist_set(),
                                    budget=audit.DEFAULT_ORCHESTRATION_BUDGET)
     return [_check("orchestrate.py", "orchestration",
-                   "pass" if not (missing or missing_fences) and ok else "fail",
+                   "pass" if not (missing or missing_fences) and ok and toggle_wired else "fail",
                    missing_decisions=missing, missing_fences=missing_fences,
-                   audit_violations=vios)]
+                   toggle_wired=toggle_wired, audit_violations=vios)]
+
+
+def _check_leash_state() -> list[dict]:
+    path = SKILL / ls.FILENAME
+    if not path.exists():
+        return [_check(ls.FILENAME, "leash_state", "fail", reason="file_missing")]
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [_check(ls.FILENAME, "leash_state", "fail", reason=f"json_decode:{exc}")]
+    ok, reason = ls.validate(state)
+    return [_check(ls.FILENAME, "leash_state",
+                   "pass" if ok else "fail",
+                   state=state, validation_reason=reason or "ok")]
 
 
 def _check_output_bundle(bundle_dir: Path) -> list[dict]:
@@ -149,13 +167,30 @@ def _check_output_bundle(bundle_dir: Path) -> list[dict]:
     manifest = json.loads(mp.read_text(encoding="utf-8"))
     log = dp.read_jsonl(bundle_dir / "orchestration-log.jsonl")
     decided = [e["decision_id"] for e in log]
-    expected = [d[0] for d in manifest.get("decision_points", [])]
+    claim = manifest.get("claim")
+    # toggle_check is always the first entry (pre-decision gate); strip it
+    # before comparing to the per-surface DECISION_POINTS list.
+    toggle_first = bool(decided) and decided[0] == "toggle_check"
+    surface_decided = decided[1:] if toggle_first else decided
+    if claim == "unleashed":
+        decisions_ok = toggle_first and surface_decided == []
+    elif claim == "rejected":
+        # Short-circuited at some surface decision point; observed must be a
+        # prefix of the declared sequence.
+        expected = [d[0] for d in manifest.get("decision_points", [])]
+        decisions_ok = toggle_first and len(surface_decided) >= 1 and \
+            surface_decided == expected[:len(surface_decided)]
+    else:
+        expected = [d[0] for d in manifest.get("decision_points", [])]
+        decisions_ok = toggle_first and surface_decided == expected
     out.append(_check(bundle_dir.name, "output_bundle.decisions_in_order",
-                      "pass" if decided == expected else "fail",
-                      expected=expected, observed=decided))
+                      "pass" if decisions_ok else "fail",
+                      claim=claim, observed=decided,
+                      expected_surface=[d[0] for d in manifest.get("decision_points", [])],
+                      toggle_first=toggle_first))
     out.append(_check(bundle_dir.name, "output_bundle.claim_consistency",
-                      "pass" if manifest.get("claim") in ("0.4", "candidate", "rejected") else "fail",
-                      claim=manifest.get("claim")))
+                      "pass" if claim in ("0.4", "candidate", "rejected", "unleashed") else "fail",
+                      claim=claim))
     return out
 
 
@@ -167,6 +202,7 @@ def collect(source_state: str) -> list[dict]:
     rows += _check_signals()
     rows += _check_data_points()
     rows += _check_orchestration_decision_points()
+    rows += _check_leash_state()
     if len(sys.argv) > 1:
         bundle = Path(sys.argv[1])
         if not bundle.is_absolute():
