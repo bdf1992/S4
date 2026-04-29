@@ -68,14 +68,15 @@ For most surfaces, three decision points are enough. Add more if the surface has
 
 Each sibling carries its own [leash_state.json](leash_state.json) at the skill root. The shape is identical across surfaces — `{state: "on"|"off"|"scoped", scoped_on_events?: [...]}` — and validated by the shared [lib/leash_state.py](lib/leash_state.py). The *file is per-surface* because the operator may want different toggles on different surfaces (e.g., leash-on for hooks, leash-off for slash commands once trusted). The validator and the toggle gate logic in `orchestrate.py` are shared verbatim across siblings; only the file's contents (and the surface-specific scoped event names) vary.
 
-### 6. SKILL.md frontmatter (the `surface` metadata field)
+### 6. SKILL.md surface identifier (in body prose, not frontmatter)
 
-```yaml
-metadata:
-  surface: <claude-code-surface-name>
+The Anthropic Agent Skill spec's frontmatter has a fixed schema (`name`, `description`, `when_to_use`, `argument-hint`, `allowed-tools`, `license`); there is no `metadata:` block and no `surface:` field. Earlier drafts of [SKILL.md](SKILL.md) carried an invented metadata block with `surface:`; the current SKILL.md captures the surface in a body-level "About this skill" line:
+
+```markdown
+> **About this skill** — surface: `<claude-code-surface-name>` · rides under: Claude Code · category: harness-control · pattern: ladder-disciplined-leash. License: MIT.
 ```
 
-This is the load-bearing identifier; sibling leashes register themselves by surface. Two leashes with the same surface conflict and `verify.py` should reject (a future cross-leash check).
+This is the load-bearing identifier; sibling leashes declare their surface here. Two leashes with the same surface conflict and `verify.py` should reject (a future cross-leash check that parses the line, since it's no longer a structured frontmatter field).
 
 ## What a sibling leash looks like, concretely
 
