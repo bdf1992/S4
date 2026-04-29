@@ -1,0 +1,8 @@
+# Generated/regenerable artifacts
+skills/*/reports/sync-*.md
+skills/*/.subprotocol/
+
+# Foundations are hardcoded after move 1; this is just python hygiene
+__pycache__/
+*.pyc
+.venv/

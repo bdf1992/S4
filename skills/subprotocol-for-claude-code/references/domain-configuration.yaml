@@ -1,0 +1,192 @@
+# domain-configuration.yaml — game-team demo
+#
+# This is the working sample for the 4-person game team scenario.
+# It exercises slots 2, 3, 4, 5, 7, 8a, 11, 13, 20, 21 — the v0.1 surface.
+# Edit this file, run scripts/sync.py, the overlay region in CLAUDE.md is regenerated.
+
+project:
+  name: starbreach-prototype
+  domain: game-dev
+  customization_filename: CLAUDE.md
+
+slots:
+
+  # Slot 2 — densest universal slot. Source-first task discipline.
+  engineering-task-discipline:
+    enabled: true
+    fills:
+      registry_path: definitions/
+      asset_kinds:
+        - module       # gameplay code modules — the registered code unit
+        - scene        # named gameplay environments
+        - system       # cross-cutting subsystems (input, physics, audio, save)
+        - tool         # editor / dev tools
+        - prefab       # reusable scene fragments
+      pointer_format: file_path:line_number
+      source_layout:
+        source_root: src/
+        definitions_root: definitions/
+        tests_root: tests/
+
+  # Slot 3 — SubProtocol tools advertised in Claude Code's tool-use register.
+  tool-use-discipline:
+    enabled: true
+    fills:
+      subprotocol_tools:
+        - name: definition_lookup
+          purpose: walk definitions/ for an existing module/scene/system/tool/prefab matching the task
+        - name: scene_graph_compute
+          purpose: derive the current scene-graph from definitions/scenes/ and emit it as Mermaid
+      parallel_invocation_examples:
+        - "Glob + definition_lookup in parallel when scoping a refactor"
+
+  # Slot 4 — risk-aware action discipline. Game team's risky actions.
+  autonomy-and-action-discipline:
+    enabled: true
+    fills:
+      risk_classes:
+        - scene_delete         # deleting a scene definition
+        - asset_path_rewrite   # renaming module/scene/system paths
+        - schema_change        # editing definitions/_schema/
+        - savefile_format      # changing the save-game format
+      confirm_threshold: named-risk-classes
+      source_walk_first: true
+
+  # Slot 5 — pointer-form commit messages, evidence trail.
+  git-rules:
+    enabled: true
+    fills:
+      commit_message_template: "{verb} {asset_kind}: {summary}\n\nReferences: {pointer_format}"
+      pr_evidence_path: evidence/
+
+  # Slot 7 — citation form in tone-and-style register.
+  formatting-and-output-style:
+    enabled: true
+    fills:
+      citation_format: file_path:line_number
+      end_of_turn_summary_includes_asset_kind: true
+
+  # Slot 8a — substrate published to Claude Code's # Environment block.
+  host-templated-data-runtime:
+    enabled: true
+    fills:
+      injection_keys:
+        - subprotocol_registry_summary
+        - subprotocol_open_requests
+        - subprotocol_recent_definitions
+      subprotocol_substrate:
+        registry_summary:
+          recent_definitions_n: 5
+        open_requests:
+          status_filter: open
+        recent_definitions:
+          since_days: 7
+
+  # Slot 11 — pointer-form memory rules in CC's # auto memory register.
+  memory-subsystem:
+    enabled: true
+    fills:
+      subprotocol_memory_kinds:
+        - definition-derivation-history    # how each registered definition was arrived at
+        - scene-evolution-trace            # which scenes changed when, and why
+        - schema-decision-log              # decisions about definitions/_schema/ shape
+      memory_save_template: "Saved as `file_path:line_number` reference, not paraphrase. Reverify on access."
+
+  # Slot 13 — planning that starts with source-walk.
+  planning-procedure:
+    enabled: true
+    fills:
+      plan_template: |
+        1. Walk `definitions/` for an existing module/scene/system matching the task.
+        2. If a `file_path:line_number` resolves the task, return it and stop.
+        3. Otherwise, identify the smallest definition kind that needs adding/changing.
+        4. Generate or edit, then save under the matching `definitions/<kind>/` path.
+        5. Update affected scenes/systems if asset_path_rewrite is involved.
+      pre_act_check:
+        - registry walk completed
+        - no existing match found
+        - target kind identified
+
+  # Slot 20 — domain procedures with named judgment seams.
+  procedure:
+    enabled: true
+    fills:
+      procedure_kinds:
+        - name: scene-add
+          trigger: user requests a new gameplay scene
+          steps:
+            - body: Walk `definitions/scenes/` for a scene matching the requested name or theme.
+            - body: If a similar scene exists, propose extending it instead of duplicating.
+            - body: If no match, draft a new `definitions/scenes/<scene-name>.md` with frontmatter (kind, dependencies, entry_module).
+            - body: Wire the scene into `definitions/_index/scenes.md` (the scene index).
+            - body: Generate the source module under `src/scenes/<scene-name>/` referencing the definition.
+            - body: Add a smoke test under `tests/scenes/<scene-name>.test.ts`.
+          judgment_seams:
+            - seam_name: similar-scene-found
+              condition: definition_lookup returns a scene with > 60% theme overlap
+              options:
+                - extend the existing scene and abandon the new one
+                - prototype as a new scene; flag for design review
+            - seam_name: cross-scene-system-needed
+              condition: the new scene needs a subsystem that does not exist
+              options:
+                - add the system first via the system-add procedure
+                - inline the behavior in the scene module and flag for later extraction
+          exit_conditions:
+            - the user cancels at the similar-scene-found seam
+            - schema validation on the new definition fails
+
+        - name: asset-path-rewrite
+          trigger: a module or scene is being renamed or moved
+          steps:
+            - body: Compute every reference to the old path via `Grep` over `src/`, `definitions/`, and `tests/`.
+            - body: Compute every reference in serialized save-files under `data/saves/`.
+            - body: Confirm the count matches what `definition_lookup` reports for the kind.
+            - body: Apply the rewrite atomically — all references in one commit.
+            - body: Regenerate the scene-graph render and the registry summary.
+          judgment_seams:
+            - seam_name: serialized-data-affected
+              condition: save-file references found under data/saves/
+              options:
+                - write a migration in src/migrations/ before the rewrite
+                - rewrite in place and bump the savefile_format version
+          exit_conditions:
+            - reference counts diverge between Grep and definition_lookup
+
+        - name: system-add
+          trigger: a new cross-cutting subsystem is needed
+          steps:
+            - body: Walk `definitions/systems/` for an existing system that could be extended.
+            - body: If no match, draft `definitions/systems/<system-name>.md` with the system's contract.
+            - body: Place the implementation under `src/systems/<system-name>/`.
+            - body: Wire the system into the bootstrap sequence in `src/bootstrap.ts`.
+            - body: Document any invariants the system relies on in its definition's `invariants:` block.
+          judgment_seams:
+            - seam_name: existing-system-extends
+              condition: a system already covers > 70% of the new behavior
+              options:
+                - extend the existing system and abandon the new one
+                - add the new system; flag the overlap for later refactor
+
+  # Slot 21 — computed renders triggered by host events.
+  render:
+    enabled: true
+    fills:
+      render_kinds:
+        - name: scene-graph-diagram
+          format: mermaid
+          trigger: on-substrate-publish
+          path: renders/scene-graph.md
+          recompute_threshold: per-session
+
+        - name: registry-summary
+          format: markdown-table
+          trigger: on-pre-commit
+          path: renders/registry-summary.md
+          recompute_threshold: on-trigger
+
+        - name: open-requests-summary
+          format: narrated-prose
+          trigger: on-end-of-turn
+          path: renders/open-requests.md
+          recompute_threshold: per-N-turns
