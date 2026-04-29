@@ -1,0 +1,3 @@
+# Promoted exemplars — human-curated bundle states the emission_readiness
+# signal trains on. Files here are deliberate; the dir is committed even
+# when empty so the collector's INPUTS path resolves.

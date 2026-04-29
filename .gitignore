@@ -2,6 +2,13 @@
 skills/*/reports/sync-*.md
 skills/*/.subprotocol/
 
+# Leash output / collected datasets / proposed exemplars are all
+# regenerable from source. Promoted exemplars are deliberate human-curated
+# state and ARE committed.
+skills/leash_for_hooks/datasets/
+skills/leash_for_hooks/outputs/
+skills/leash_for_hooks/exemplars/proposed/
+
 # Foundations are hardcoded after move 1; this is just python hygiene
 __pycache__/
 *.pyc

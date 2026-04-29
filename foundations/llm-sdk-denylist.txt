@@ -1,0 +1,22 @@
+# LLM-SDK denylist — Foundation 2's no-LLM check consults this file via a
+# dedicated collector. Lines starting with '#' and blank lines are ignored.
+# Each entry is an importable Python module/package name; presence anywhere
+# in a collector's transitive import set disqualifies that collector.
+#
+# This file is hand-edited deliberately: adding/removing an entry must be
+# visible as both a file diff and a change in the data-point store the
+# collector emits. Foundation 2 specifies the protocol; this is the source.
+anthropic
+openai
+google.generativeai
+google.genai
+cohere
+mistralai
+together
+replicate
+litellm
+huggingface_hub
+transformers
+ollama
+vllm
+groq

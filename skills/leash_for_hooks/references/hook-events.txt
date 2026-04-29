@@ -1,0 +1,17 @@
+# Claude Code hook event names — canonical taxonomy walked by the
+# hook_event_decl collector. Lines starting with '#' and blank lines are
+# ignored. One event name per line.
+#
+# This file is the leash's reference for what hook events are recognized.
+# Adding a new event here is a deliberate, file-level edit; the collector
+# re-emits its data points the next time it runs and the orchestration's
+# event-validity check sees the new event automatically.
+PreToolUse
+PostToolUse
+Notification
+UserPromptSubmit
+Stop
+SubagentStop
+PreCompact
+SessionStart
+SessionEnd
