@@ -10,7 +10,7 @@ These files are **bedrock-shared**. A sibling leash imports them; it does not re
 
 - [foundations/data-point.md](../../foundations/data-point.md), [foundations/collection-program.md](../../foundations/collection-program.md), [foundations/pointer.md](../../foundations/pointer.md), [foundations/zero-four.md](../../foundations/zero-four.md) — the bedrock spec.
 - [foundations/llm-sdk-denylist.txt](../../foundations/llm-sdk-denylist.txt) — the SDK denylist source.
-- [lib/data_point.py](lib/data_point.py), [lib/collection_program.py](lib/collection_program.py), [lib/pointer.py](lib/pointer.py), [lib/audit.py](lib/audit.py) — the validators and constructors. *Future refactor: lift these to a top-level `bedrock/` package so siblings import from one place rather than a sibling-private `lib/`.*
+- [lib/data_point.py](lib/data_point.py), [lib/collection_program.py](lib/collection_program.py), [lib/pointer.py](lib/pointer.py), [lib/audit.py](lib/audit.py), [lib/leash_state.py](lib/leash_state.py) — the validators, constructors, and toggle reader. *Future refactor: lift these to a top-level `bedrock/` package so siblings import from one place rather than a sibling-private `lib/`.*
 - [collectors/llm_sdk_denylist.py](collectors/llm_sdk_denylist.py) — the recursive-fence denylist collector. Walks the same `foundations/llm-sdk-denylist.txt` regardless of which surface a sibling targets.
 - [resolvers/file_line.py](resolvers/file_line.py), [resolvers/collector.py](resolvers/collector.py), [resolvers/data_point.py](resolvers/data_point.py) — the three universal pointer kinds.
 
@@ -64,7 +64,11 @@ DECISION_POINTS = [
 
 For most surfaces, three decision points are enough. Add more if the surface has more shape-validation steps (e.g. MCP wirings might want a `transport_validity` and a `handshake_check`).
 
-### 5. SKILL.md frontmatter (the `surface` metadata field)
+### 5. `leash_state.json` (per-surface toggle file, same shape across siblings)
+
+Each sibling carries its own [leash_state.json](leash_state.json) at the skill root. The shape is identical across surfaces — `{state: "on"|"off"|"scoped", scoped_on_events?: [...]}` — and validated by the shared [lib/leash_state.py](lib/leash_state.py). The *file is per-surface* because the operator may want different toggles on different surfaces (e.g., leash-on for hooks, leash-off for slash commands once trusted). The validator and the toggle gate logic in `orchestrate.py` are shared verbatim across siblings; only the file's contents (and the surface-specific scoped event names) vary.
+
+### 6. SKILL.md frontmatter (the `surface` metadata field)
 
 ```yaml
 metadata:
@@ -81,12 +85,13 @@ Spawning a sibling leash for, say, slash commands:
 2. Copy [SKILL.md](SKILL.md) → adjust frontmatter `surface: slash-commands`, descriptions.
 3. Copy [recursion-seam.md](recursion-seam.md) → leave verbatim (it documents the same pattern).
 4. Symlink or import-from `lib/`, `resolvers/`, `collectors/llm_sdk_denylist.py`, `signals/emission_readiness.py` from a shared package (or copy initially; refactor to shared once a third leash exists — three is the threshold for de-duplication).
-5. Create `references/slash-command-taxonomy.txt` (reserved names, prefixes).
-6. Create `collectors/slash_command_decl.py` — same shape as `hook_event_decl.py`, INPUTS pointing at the new taxonomy file.
-7. Create `collectors/slash_command_config.py` — same shape as `hook_config.py`, INPUTS pointing at `~/.claude/commands/*.md` and project-local equivalents.
-8. Create `signals/slash_command_collision.py` — same shape as `hook_collision.py`, fitted on `slash_command_config` data points.
-9. Create `orchestrate.py` — same shape, with `DECISION_POINTS` updated to reference the new fence ids.
-10. Create `verify.py` — copy of [verify.py](verify.py), with `COLLECTORS` and `SIGNALS` tuples updated to reference the slash-command-specific modules.
+5. Create `leash_state.json` with `{"state": "on"}` (the safe default).
+6. Create `references/slash-command-taxonomy.txt` (reserved names, prefixes).
+7. Create `collectors/slash_command_decl.py` — same shape as `hook_event_decl.py`, INPUTS pointing at the new taxonomy file.
+8. Create `collectors/slash_command_config.py` — same shape as `hook_config.py`, INPUTS pointing at `~/.claude/commands/*.md` and project-local equivalents.
+9. Create `signals/slash_command_collision.py` — same shape as `hook_collision.py`, fitted on `slash_command_config` data points.
+10. Create `orchestrate.py` — same shape, with `DECISION_POINTS` updated to reference the new fence ids. The toggle gate (`toggle_check` consulting `leash_state`) is structurally identical and ported verbatim.
+11. Create `verify.py` — copy of [verify.py](verify.py), with `COLLECTORS` and `SIGNALS` tuples updated to reference the slash-command-specific modules.
 
 The 10 steps are mechanical. The actual *engineering* in a sibling leash is in (a) what shape the surface's data points have (= the value_schema), (b) what the surface's collision rule is, and (c) what the taxonomy file contains. Everything else is structural copy-and-substitute.
 
