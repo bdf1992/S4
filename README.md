@@ -17,7 +17,7 @@ A fresh repo with two artifacts:
 
 ## What's being tested
 
-Whether the seed in `CLAUDE.md` transmits cleanly to a fresh Claude session with no other context. The hypothesis is: if the named abstraction is load-bearing, fresh-Claude defines the three foundations, builds the ladder bottom-up, and produces a 0.4 program in one small concrete domain — without further coaching, without skipping rungs, without absorbing the anti-pattern vocabulary listed in CLAUDE.md.
+Whether the seed in `CLAUDE.md` transmits cleanly to a fresh Claude session with no other context. The hypothesis is: if the named abstraction is load-bearing, fresh-Claude defines the three foundations, builds the ladder bottom-up, and produces an **agentic leash for one Claude Code harness surface** — a constraint package built as a skill (a repeatable 0.3 program), parameterized, ladder-disciplined, and capable of producing more leashes for sibling surfaces. All without further coaching, without skipping rungs, without absorbing the anti-pattern vocabulary listed in CLAUDE.md.
 
 If fresh-Claude does that, the abstraction transmitted. If fresh-Claude collapses (skips rungs, mutates the bedrock, free-writes signals as prose, adopts grandiose framing), the seed is incomplete and we learn what to add.
 

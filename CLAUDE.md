@@ -16,6 +16,16 @@ Ladder discipline breaks the circularity by **anchoring every claim to non-LLM e
 
 Why now: the 3.0 era is here, and the default trajectory is "more agents doing more vibecoding faster." The alternative — what 0.4 names — needs someone to work out, concretely, what discipline makes the floor grow instead of stay flat. This repo is one cycle of testing whether the discipline transmits. If it does, you productize the seed. If it doesn't, you learn what's missing.
 
+## What you're building
+
+Concretely, the deliverable is **an agentic leash for Claude Code**.
+
+A *leash* is a constraint package that attaches to one of Claude Code's harness surfaces (CLAUDE.md, settings.json, hooks, slash commands, skill folder, MCP wirings, etc.) and constrains how Claude Code operates on that surface within a given domain. The existing skill at [skills/subprotocol-for-claude-code/](skills/subprotocol-for-claude-code/) is prior art — it generates a marker-bounded CLAUDE.md overlay, which is a leash for the project-instructions surface. The leash you're building under ladder discipline is the next iteration of that idea, plus a recursion property.
+
+The leash is itself a **skill** — a repeatable 0.3 program, parameterized by domain, kind-validated, ladder-aware, ridden under Claude Code. When the leash is invoked, it builds a ladder for its domain and emits a 0.4 bundle for its surface. *Critically*, the leash also carries the capacity to produce **more leashes** (and other harness extensions: new skills, new slash commands, new hooks) for sibling harness surfaces, each new leash bedrock-conforming and ladder-disciplined by the same rules. That's how the harness scales: every new surface gets its own leash, all under shared discipline, all sharing floor.
+
+The 0.3 work in this experiment produces two related outputs in the same family: **leashes** (constraints on harness surfaces) and **harness extensions** (capabilities added to harness surfaces). Both ride under Claude Code, both are produced by 0.3 agentic engineering, both contained by the same requirements stated below. Treating them as one family unifies the work.
+
 ## Vocabulary
 
 These five names refer to **regimes of software**. Each regime is defined by *what dimension of the regime below it abstracts away*, and how many data points it needs about that dimension to abstract well.
@@ -113,9 +123,9 @@ In order. Do not start move N until move N-1 is complete and committed.
 
 2. **Define what makes a program 0.4.** Write `foundations/zero-four.md`. Use only the vocabulary you established in move 1 — data points, collection programs, pointers. State the grading procedure (the algorithm 0.3 will run to walk a bundle and verify it). State the negative definition (what disqualifies a candidate). State your chosen constraint patterns between adjacent layers (the wiring you've decided on for this domain). Commit before move 3.
 
-3. **Build the skill that runs the ladder loop and emits 0.4 programs.** Pick one small concrete domain — smaller is better (a single directory's reference health, a single CLI's permission drift, a single vault's stale-link count). The skill is itself a 0.3 program: parameterized by domain, kind-validated, repeatable. When invoked it builds the ladder for that domain bottom-up — a 0.1 collector, a 0.2 model trained on what the collector produces, the 0.3 orchestration that uses both — and emits a 0.4 bundle whose grade is a computable property of the bundle's own files. The bundle ships with a `verify.py` that walks itself and exits 0 iff every rung is present, every pointer is live, and every claim has a receipt.
+3. **Build the agentic leash for one Claude Code harness surface.** Pick one concrete surface — start small (one CLAUDE.md overlay rule, or one settings.json hook, or one slash command shape, or one skill-folder leash). The leash is itself a skill: a repeatable 0.3 program, parameterized by domain, kind-validated. When invoked it builds the ladder for its domain bottom-up — a 0.1 collector, a 0.2 model trained on what the collector produces, the 0.3 orchestration that uses both — and emits a 0.4 bundle for its surface. The bundle ships with a `verify.py` that walks itself and exits 0 iff every rung is present, every pointer is live, and every claim has a receipt. The leash must also carry the capacity to produce *more leashes* (or harness extensions) for sibling surfaces, each new leash bedrock-conforming and ladder-disciplined under the same rules. **That recursion is the success indicator beyond a one-shot bundle.**
 
-When all three moves are done, you have one skill, one concrete 0.4 program in one concrete domain. The next iteration is to invoke the skill (or a sibling skill) on a different domain. Floor-growth — more 0.1 primitives reused in subsequent rounds, smaller 0.3 free-write share per round — is the success metric. If the floor stays flat or oscillates across rounds, you are still in 0.3 with extra steps, not 0.4.
+When all three moves are done, you have one leash for one Claude Code harness surface, plus the meta-capacity to produce more leashes for sibling surfaces. The next iteration is to invoke the leash (or a sibling leash) on a different surface. Floor-growth — more 0.1 primitives reused in subsequent rounds, smaller 0.3 free-write share per round — is the success metric. If the floor stays flat or oscillates across rounds, you are still in 0.3 with extra steps, not 0.4.
 
 ## Stop and report
 
@@ -123,7 +133,7 @@ Pause and emit a status summary at these checkpoints:
 
 - After move 1: report the three foundations as written. Do not proceed to move 2 without confirmation that they hold.
 - After move 2: report the 0.4 grading procedure and your chosen constraint patterns. Do not proceed to move 3 without confirmation.
-- After move 3 first run: report the skill, the bundle, and the verify-script's output. Show that the floor exists.
+- After move 3 first run: report the leash (skill), the bundle it produced, the harness surface it attaches to, and the verify-script's output. Show that the floor exists. Also show the recursion seam — how this leash would produce a sibling leash for a different surface.
 - Any time you feel pressure to skip a rung, mutate a foundation, or adopt the anti-pattern vocabulary above. Stop and report instead.
 
-The experiment is whether this seed transmits. If it does, you build the ladder cleanly under your own discipline and the result is a skill that produces 0.4 programs on demand. If it doesn't, that itself is information about what the seed is missing.
+The experiment is whether this seed transmits. If it does, you build the ladder cleanly under your own discipline and the result is an agentic leash for Claude Code that can produce more leashes for sibling surfaces under the same rules. If it doesn't, that itself is information about what the seed is missing.
