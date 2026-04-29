@@ -2,6 +2,12 @@
 
 A transmission test for the SubProtocol ladder discipline.
 
+## Why
+
+Right now, AI-assisted work is circular: an LLM writes code, an LLM grades it, the human can't tell whether engineering was actually performed or only performed-as-theatre. Output doesn't accumulate — every task is a fresh free-write, no shared floor, no compounding signal corpus. That's Software 3.0 with extra steps; it looks impressive in demos and decays in the wild.
+
+This experiment tests whether a specific discipline — anchoring every claim to non-LLM evidence, building stacked layers under bootstrap order, running them under mutual pointing, encoding the loop as a skill — produces something different. The "something different" is named **0.4**: a kind of program where the engineering process is fully observable in the artifact, where "agentically engineered" means more than "an LLM wrote it." The deeper why, plus the rules, are in [CLAUDE.md](CLAUDE.md).
+
 ## What this is
 
 A fresh repo with two artifacts:
