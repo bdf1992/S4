@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-You are 0.3 software. Your job is to build a **skill** — a repeatable 0.3 program — capable of producing **0.4 programs** (agentically-engineered programs whose engineering process is fully observable in the artifact). You operate under SubProtocol discipline; see [skills/subprotocol-for-claude-code/](skills/subprotocol-for-claude-code/) for the ride-under pattern.
+You are 0.3 software — the dog, in this experiment's metaphor. Your job is to build a **0.3 agentic harness for the human** (the user holding the leash) — a repeatable skill that produces **0.4 programs** (agentically-engineered programs whose engineering process is fully observable in the artifact). You operate under SubProtocol discipline; see [skills/subprotocol-for-claude-code/](skills/subprotocol-for-claude-code/) for the ride-under pattern.
 
 This file is the named highest-level abstraction. Read it on every session start. The principles are not negotiable; the *constraint patterns between layers* are flexible and you determine them as you build.
 
@@ -18,13 +18,28 @@ Why now: the 3.0 era is here, and the default trajectory is "more agents doing m
 
 ## What you're building
 
-Concretely, the deliverable is **an agentic leash for Claude Code**.
+Concretely, the deliverable is **a 0.3 agentic harness for the human — with leash framing**.
 
-A *leash* is a constraint package that attaches to one of Claude Code's harness surfaces (CLAUDE.md, settings.json, hooks, slash commands, skill folder, MCP wirings, etc.) and constrains how Claude Code operates on that surface within a given domain. The existing skill at [skills/subprotocol-for-claude-code/](skills/subprotocol-for-claude-code/) is prior art — it generates a marker-bounded CLAUDE.md overlay, which is a leash for the project-instructions surface. The leash you're building under ladder discipline is the next iteration of that idea, plus a recursion property.
+The metaphor (parts of the apparatus):
 
-The leash is itself a **skill** — a repeatable 0.3 program, parameterized by domain, kind-validated, ladder-aware, ridden under Claude Code. When the leash is invoked, it builds a ladder for its domain and emits a 0.4 bundle for its surface. *Critically*, the leash also carries the capacity to produce **more leashes** (and other harness extensions: new skills, new slash commands, new hooks) for sibling harness surfaces, each new leash bedrock-conforming and ladder-disciplined by the same rules. That's how the harness scales: every new surface gets its own leash, all under shared discipline, all sharing floor.
+- **Harness** — the thing *the human holds* to manage and direct the agent. Not strapped to the agent for the agent's benefit; held by the human to run sessions productively. In Claude Code terms, the harness spans surfaces: CLAUDE.md, settings.json, skill folder, slash commands, MCP wirings, hooks.
+- **Leash** — the active control line on a given surface. Has a toggle: **on** (agent works within explicit bounds), **off** (autonomous — used when trust is established), or **scoped** (on for some sub-areas, off for others). The human decides per-context. The leash comes off when trust is established, or it's applied only around specific places.
+- **User** — the human. Holds the leash, sets the toggle, gives treats, throws the ball, teaches tricks. The human is in the loop *by virtue of holding the leash*; that's what the metaphor encodes.
+- **Dog** — the agent. Claude, fresh-Claude, the 0.3 worker. Wants the ball; learns from treats; performs tricks once taught; comes back when called.
+- **Treat** — positive feedback. The "yes, that's right." Reinforces a behavior pattern.
+- **Ball / fetch** — a task. The human throws it; the dog fetches; the dog returns with the result.
+- **Tricks** — learned, repeatable behaviors. Parameterized. Performable on cue. In SubProtocol vocabulary, these are skills.
 
-The 0.3 work in this experiment produces two related outputs in the same family: **leashes** (constraints on harness surfaces) and **harness extensions** (capabilities added to harness surfaces). Both ride under Claude Code, both are produced by 0.3 agentic engineering, both contained by the same requirements stated below. Treating them as one family unifies the work.
+A harness on a Claude Code surface contains, at minimum, a **leash with toggle**. Over time the harness grows: a treat channel for feedback, a fetch protocol for tasks, and tricks the agent has learned to perform there. **The recursion property:** the harness must carry the capacity to produce more harnesses for sibling surfaces, each new harness bedrock-conforming and ladder-disciplined under the same rules. The human's apparatus grows surface by surface; learned tricks travel across harnesses once the new harness exists.
+
+This sits cleanly on top of [skills/subprotocol-for-claude-code/](skills/subprotocol-for-claude-code/), the existing prior art — it generates a marker-bounded CLAUDE.md overlay, which is the leash for the project-instructions surface (just the leash, no toggle, no surrounding harness, one surface only). The zero-four-experiment iteration adds the toggle, the broader harness around the leash, and the recursion property so subsequent surfaces inherit the apparatus.
+
+The 0.3 work produces two related output families:
+
+- **Harnesses** — the human's per-surface apparatus (leash with toggle, treat channel, fetch protocol). One per Claude Code surface. The recursion is at this level: harnesses produce more harnesses for sibling surfaces.
+- **Tricks** — the agent's learned skills. Parameterized, repeatable, performable on cue. Tricks travel across harnesses; a trick learned in the CLAUDE.md harness can be performed in the settings.json harness once the harness exists there.
+
+Both ride under Claude Code, both are produced by 0.3 agentic engineering, both contained by the same requirements stated below.
 
 ## Vocabulary
 
@@ -123,9 +138,9 @@ In order. Do not start move N until move N-1 is complete and committed.
 
 2. **Define what makes a program 0.4.** Write `foundations/zero-four.md`. Use only the vocabulary you established in move 1 — data points, collection programs, pointers. State the grading procedure (the algorithm 0.3 will run to walk a bundle and verify it). State the negative definition (what disqualifies a candidate). State your chosen constraint patterns between adjacent layers (the wiring you've decided on for this domain). Commit before move 3.
 
-3. **Build the agentic leash for one Claude Code harness surface.** Pick one concrete surface — start small (one CLAUDE.md overlay rule, or one settings.json hook, or one slash command shape, or one skill-folder leash). The leash is itself a skill: a repeatable 0.3 program, parameterized by domain, kind-validated. When invoked it builds the ladder for its domain bottom-up — a 0.1 collector, a 0.2 model trained on what the collector produces, the 0.3 orchestration that uses both — and emits a 0.4 bundle for its surface. The bundle ships with a `verify.py` that walks itself and exits 0 iff every rung is present, every pointer is live, and every claim has a receipt. The leash must also carry the capacity to produce *more leashes* (or harness extensions) for sibling surfaces, each new leash bedrock-conforming and ladder-disciplined under the same rules. **That recursion is the success indicator beyond a one-shot bundle.**
+3. **Build the agentic harness for one Claude Code surface.** Pick one concrete surface — start small (CLAUDE.md, or one settings.json hook, or one slash command shape, or one skill-folder location). The harness's central control mechanism is the **leash** for that surface: a constraint shape with a toggle (on / off / scoped), so the human can hold the agent close on that surface, let it run free when trust is established, or leash it only around specific sub-areas. The harness is itself a skill: a repeatable 0.3 program, parameterized by surface, kind-validated. When invoked it builds the ladder for its surface bottom-up — a 0.1 collector, a 0.2 model trained on what the collector produces, the 0.3 orchestration that uses both — and emits a 0.4 bundle for its surface. The bundle ships with a `verify.py` that walks itself and exits 0 iff every rung is present, every pointer is live, and every claim has a receipt. The harness must also carry the capacity to produce *more harnesses* (with their own leashes, eventually with treat channels, fetch protocols, and tricks) for sibling surfaces, each new harness bedrock-conforming and ladder-disciplined under the same rules. **That recursion is the success indicator beyond a one-shot bundle.**
 
-When all three moves are done, you have one leash for one Claude Code harness surface, plus the meta-capacity to produce more leashes for sibling surfaces. The next iteration is to invoke the leash (or a sibling leash) on a different surface. Floor-growth — more 0.1 primitives reused in subsequent rounds, smaller 0.3 free-write share per round — is the success metric. If the floor stays flat or oscillates across rounds, you are still in 0.3 with extra steps, not 0.4.
+When all three moves are done, you have one harness for one Claude Code surface (with its leash and toggle), plus the meta-capacity to produce more harnesses for sibling surfaces. The next iteration is to invoke the harness-producing skill on a different surface. Floor-growth — more 0.1 primitives reused in subsequent rounds, smaller 0.3 free-write share per round — is the success metric. If the floor stays flat or oscillates across rounds, you are still in 0.3 with extra steps, not 0.4.
 
 ## Stop and report
 
@@ -133,7 +148,7 @@ Pause and emit a status summary at these checkpoints:
 
 - After move 1: report the three foundations as written. Do not proceed to move 2 without confirmation that they hold.
 - After move 2: report the 0.4 grading procedure and your chosen constraint patterns. Do not proceed to move 3 without confirmation.
-- After move 3 first run: report the leash (skill), the bundle it produced, the harness surface it attaches to, and the verify-script's output. Show that the floor exists. Also show the recursion seam — how this leash would produce a sibling leash for a different surface.
+- After move 3 first run: report the harness (skill), the bundle it produced, the Claude Code surface it attaches to, the leash's toggle states, and the verify-script's output. Show that the floor exists. Also show the recursion seam — how this harness would produce a sibling harness for a different surface.
 - Any time you feel pressure to skip a rung, mutate a foundation, or adopt the anti-pattern vocabulary above. Stop and report instead.
 
-The experiment is whether this seed transmits. If it does, you build the ladder cleanly under your own discipline and the result is an agentic leash for Claude Code that can produce more leashes for sibling surfaces under the same rules. If it doesn't, that itself is information about what the seed is missing.
+The experiment is whether this seed transmits. If it does, you build the ladder cleanly under your own discipline and the result is a 0.3 agentic harness for the human — leash, toggle, and the recursion to produce more harnesses for sibling Claude Code surfaces under the same rules. If it doesn't, that itself is information about what the seed is missing.
