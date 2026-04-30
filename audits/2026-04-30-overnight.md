@@ -121,3 +121,11 @@ The loop did not free-write a proposal without a measured gap — that's the req
 3. **Upstream dataset refresh** — the most direct unblock for the existing `anchor_unverified` scope. A fresh claim_audit run would likely produce gap records to act on tomorrow.
 
 The loop will keep cycling at a longer cadence (~50min) and re-checking. If git state changes between now and morning (e.g. you wake briefly, refresh claim_audit, sleep again), the next iteration will pick up the new state and resume drafting proposals.
+
+---
+
+## Heartbeats
+
+Lightweight per-iteration trail confirming the loop fired, observed no state change, and held the leash. Each line is structured: `iter N · UTC time · HEAD short-sha · status`.
+
+- iter 4 · 02:06 local · HEAD `9cf0b48` · still blocked on operator decisions; no-op
