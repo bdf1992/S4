@@ -221,3 +221,44 @@ The promoter copies `candidate/regime_audit_report_verifier.py` to `skills/regim
 - Third proposal: verifier for `subprotocol-for-claude-code` (the remaining gap record). Different verifier shape — checks markdown content (overlay.md, references/, reports/) plus 2 Python scripts. ~80 lines once trimmed.
 - Possibly a `claim_with_broken_probe` collector if dangling_file should be surfaced as a gap kind too (operator decision still implicit; defensible call available either way).
 - Re-run all gap-collectors after any operator promotion to confirm gap counts shrink as expected.
+
+---
+
+## Iteration 12 — third proposal lands; gap inventory fully matched
+
+One commit this iteration. The remaining gap data point now has a proposal.
+
+### Decisions taken (revertable)
+
+- **D-iter12-1 — Reports/ excluded from subprotocol verifier's INPUTS.** subprotocol-for-claude-code's `reports/` directory holds dated sync artifacts (e.g. `sync-2026-04-29.md`) that come and go. Including them in INPUTS would churn source_state on every sync and produce noisy diffs. The verifier checks stable structural claims (SKILL.md, overlay.md, 3 named reference files, 2 named scripts) rather than the rotating report content. Revert: add `reports/*.md` globs to INPUTS if the operator wants reports validated. Note in the proposal's sample/expected_behavior.md spells out the boundary explicitly.
+
+### Floor growth this iteration
+
+| Component | Commit | What it adds |
+| --- | --- | --- |
+| [proposals/prop_2026-04-30_verifier-for-subprotocol-for-claude-code/](../proposals/prop_2026-04-30_verifier-for-subprotocol-for-claude-code/) | `669f5d9` | Third proposal. 13 bundle_self_check data points (7 file-presence + 3 per script × 2 scripts). 74/80 lines. 13/13 target checks pass. All Foundation-2 validators green at draft-time. |
+
+### State summary — gap inventory fully matched
+
+`skill_without_verifier` emitted 3 records at iter 11; each now has a proposal:
+
+| Gap data point | Target skill | Proposal |
+| --- | --- | --- |
+| `skill_without_verifier:756c48fe81d375a5` | regime_audit_report | [prop:2026-04-30:verifier-for-regime-audit-report](../proposals/prop_2026-04-30_verifier-for-regime-audit-report/) |
+| `skill_without_verifier:21d380eb7bc25319` | dashboard | [prop:2026-04-30:verifier-for-dashboard](../proposals/prop_2026-04-30_verifier-for-dashboard/) |
+| `skill_without_verifier:b404f1c17d6e7d9d` | subprotocol-for-claude-code | [prop:2026-04-30:verifier-for-subprotocol-for-claude-code](../proposals/prop_2026-04-30_verifier-for-subprotocol-for-claude-code/) |
+
+If all three promote, the next run of `skill_without_verifier.collect()` returns an empty list (each former gap will have a verify.py present). The gap inventory drained from 3→0 IS the floor-growth signal — measurable, reproducible, anchored to source_state. That's the round-over-round signal CLAUDE.md says marks the inversion of the vibecoding trap.
+
+### Approvals walk (step 5)
+
+`approvals/decisions.jsonl` does not yet exist. No promotions to execute. The 0.3 routine never writes to this file; the operator's first decision is also the bootstrap of the approvals registry.
+
+### What's queued for iter 13
+
+- **Third gap-collector kind** if the operator wants more dimensions of gap inventory. Defensible candidates:
+  - `collector_with_dangling_inputs` — walks every Foundation-2 collector, checks INPUTS resolve. Catches stale declarations.
+  - `dataset_without_source_state` — walks `*.jsonl` under `datasets/`, emits gap if no `.source_state` sidecar. Catches floating data points that lost their anchor.
+  - `claim_with_broken_probe` (the `dangling_file` case from iter 2's deferred decision).
+- **Walk approvals/** — if the operator wakes up and writes a `promote` line, iter 13 will pick it up and run the promoter (dry-run first, real run if dry-run is sane).
+- **Stress-test the promoter happy path** — once the operator makes a decision, iter 13 also confirms the promoted file lands in the live floor cleanly and the `skill_without_verifier` rerun no longer emits that gap (i.e., the system closes the loop end-to-end).
