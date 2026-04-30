@@ -1,0 +1,146 @@
+<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'><title>Proposals — Review</title><style>
+* { box-sizing: border-box; }
+body { font: 14px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif; max-width: 1100px; margin: 2em auto; padding: 0 1em; color: #1a1a1a; background: #fafaf8; }
+h1, h2, h3 { color: #2a2a2a; }
+h1 { border-bottom: 2px solid #2a2a2a; padding-bottom: .3em; }
+.intro { background: #f0eee8; padding: 1em 1.5em; border-radius: 6px; border-left: 4px solid #555; }
+.intro p { margin: .5em 0; }
+.proposal { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 1.5em; margin: 2em 0; box-shadow: 0 1px 3px rgba(0,0,0,.05); }
+.proposal-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5em; }
+.proposal-header h2 { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1em; }
+.badge { display: inline-block; padding: .15em .6em; border-radius: 999px; font-size: .85em; font-weight: 600; }
+.badge.pass { background: #d4edda; color: #155724; }
+.badge.fail { background: #f8d7da; color: #721c24; }
+.badge.proposed { background: #e7f0fa; color: #1d4f8a; }
+.badge.promoted { background: #c3e6cb; color: #155724; }
+.badge.rejected { background: #f5c6cb; color: #721c24; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: .25em 1em; margin: 1em 0; }
+.kv dt { font-weight: 600; color: #555; }
+.kv dd { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .9em; }
+.provenance { display: flex; align-items: stretch; gap: .5em; margin: 1.5em 0; overflow-x: auto; }
+.prov-step { background: #f6f4ee; border: 1px solid #d8d4ca; border-radius: 6px; padding: .75em 1em; min-width: 180px; flex: 1; }
+.prov-step strong { display: block; color: #444; font-size: .8em; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .35em; }
+.prov-step code { font-size: .8em; word-break: break-all; }
+.prov-arrow { display: flex; align-items: center; color: #888; font-size: 1.5em; }
+.gap-narrative { background: #fff8e8; border-left: 4px solid #d4a000; padding: .75em 1em; margin: 1em 0; border-radius: 0 4px 4px 0; }
+table.checks { width: 100%; border-collapse: collapse; margin: 1em 0; }
+table.checks th, table.checks td { padding: .6em .75em; text-align: left; vertical-align: top; border-bottom: 1px solid #eee; }
+table.checks th { background: #f6f4ee; font-weight: 600; font-size: .85em; text-transform: uppercase; letter-spacing: .5px; color: #555; }
+table.checks code { background: #f0eee8; padding: 1px 5px; border-radius: 3px; font-size: .85em; }
+table.checks .why { color: #666; font-size: .9em; }
+table.checks .res { white-space: nowrap; }
+.preview { background: #2a2a2a; color: #d4d4d4; padding: 1em; border-radius: 4px; overflow-x: auto; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85em; line-height: 1.45; }
+details { margin: 1em 0; padding: .5em 1em; background: #f6f4ee; border-radius: 4px; }
+details summary { cursor: pointer; font-weight: 600; }
+details pre { background: #2a2a2a; color: #d4d4d4; padding: 1em; border-radius: 4px; margin: .75em 0; overflow-x: auto; font-size: .85em; }
+.metric { display: inline-block; padding: 1px 8px; background: #e7f0fa; border-radius: 3px; font-family: ui-monospace, monospace; font-size: .85em; color: #1d4f8a; }
+.no-data { color: #999; font-style: italic; }
+</style></head><body><h1>Proposals — Review surface</h1><div class="intro"><p><strong>What you're looking at.</strong> Each card below is a candidate <code>verify.py</code> drafted by the overnight loop in response to a measured gap. The provenance trail shows the chain of trust from <em>gap measured by a Foundation-2 collector</em> through <em>candidate drafted</em> through <em>pre-verification ran</em> to <em>awaiting operator</em>.</p><p><strong>How to read it.</strong> The Pre-verification table explains every Foundation-2 check in plain language alongside its result. A green <span class="badge pass">pass</span> means the check ran cleanly at draft-time; the same checks run again at promotion-time, so a draft-pass is not a final pass.</p><p><strong>3 pending proposal(s)</strong> below, sorted by proposal_id.</p></div><section class="proposal" id="prop:2026-04-30:verifier-for-dashboard"><header class="proposal-header"><h2>prop:2026-04-30:verifier-for-dashboard</h2><div><span class="badge proposed">status: proposed</span> <span class="badge pass">overall: pass</span></div></header><dl class="kv"><dt>Target skill</dt><dd><code>skills/dashboard</code></dd><dt>Promotes to</dt><dd><code>skills/dashboard/verify.py</code></dd><dt>Candidate</dt><dd><code>proposals/prop_2026-04-30_verifier-for-dashboard/candidate/dashboard_verifier.py</code> (103 total lines, collector_id <code>dashboard_verifier</code>)</dd><dt>Claimed kind</dt><dd><code>bundle_self_check</code></dd></dl><h3>Provenance trail</h3><div class="provenance"><div class="prov-step"><strong>1. Gap measured</strong>by collector <code>skill_without_verifier</code> <br>at source_state <code>sha256:1bfd5aff1af964f17…</code><br>on 2026-04-30T13:17:11+00:00</div><div class="prov-arrow">→</div><div class="prov-step"><strong>2. Proposal drafted</strong>by orchestration <code>iter_11_overnight_loop</code><br>at <code>git:9caa3e7493e91f65c0667df6df354297e00bf9c6</code></div><div class="prov-arrow">→</div><div class="prov-step"><strong>3. Pre-verification ran</strong>at 2026-04-30T13:28:40+00:00<br>against the candidate file</div><div class="prov-arrow">→</div><div class="prov-step"><strong>4. Awaits operator</strong>writes a line to <code>approvals/decisions.jsonl</code></div></div><h3>The measured gap</h3><div class="gap-narrative">skills/dashboard has SKILL.md and four Python entry points (render, snapshot, narrate, html) but no verify.py. The dashboard claims to be 0.1 deterministic with no LLM in renders; without a verify.py, that claim is asserted by prose, not checked by walker. Closure: a per-file structural+import check that exits 0 iff each entry point is present, parses, and imports nothing from the LLM-SDK or nondeterminism denylists.</div><h3>Pre-verification — what was checked, in plain language</h3><table class="checks"><thead><tr><th>Check</th><th>What it verifies</th><th>Result</th></tr></thead><tbody><tr><td><strong>Substantive lines ≤ 80</strong><br><code>audit_budget_under_80</code></td><td class="why">Foundation 2&#x27;s smallness rule. A small program&#x27;s diff is loud; a large program&#x27;s diff is camouflage. Reviewed in one sitting.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">76/80 lines</span></td></tr><tr><td><strong>Running the candidate against the live target skill — every check passed</strong><br><code>candidate_runs_clean_against_target</code></td><td class="why">End-to-end smoke test. The candidate is invoked against its declared INPUTS and every emitted bundle_self_check has verdict=pass.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">17/17 checks</span></td></tr><tr><td><strong>Two collect() runs produced byte-identical witnesses</strong><br><code>determinism_runtime_check</code></td><td class="why">Live confirmation that determinism holds — not just structurally absent banned imports, but actually deterministic in execution.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">17 records compared</span></td></tr><tr><td><strong>No anthropic / openai / google.generativeai / cohere imports</strong><br><code>no_llm_sdk_imports</code></td><td class="why">Bedrock rule: a 0.1 collector cannot depend on a language model. If it did, the bottom of the ladder would be a model output — circular grading.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>No random / uuid / secrets imports</strong><br><code>no_nondeterminism_imports</code></td><td class="why">Same source state must produce byte-identical output. datetime is allowed only inside provenance.collected_at, which Foundation 1 designates advisory and not load-bearing.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>Top-level COLLECTOR_ID, KIND, VALUE_SCHEMA, INPUTS declared</strong><br><code>required_constants_present</code></td><td class="why">Foundation 2 requires these as constants. Without them the candidate is not a recognizable collector — its kind, output schema, and read-surface are undeclared.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>collect() and verify() entry points exist</strong><br><code>required_functions_present</code></td><td class="why">Foundation 2&#x27;s two-function interface. collect() emits data points; verify() re-walks them. Without both, the collector cannot be re-run or self-checked.</td><td class="res"><span class="badge pass">pass</span> </td></tr></tbody></table><h3>Candidate source — first 30 lines</h3><pre class="preview">  1  &quot;&quot;&quot;Candidate verify.py for skills/dashboard — a 0.1 multi-entry-point
+  2  render skill (render / snapshot / narrate / html, all over the same
+  3  live source). Walks the four Python entry points + SKILL.md and emits
+  4  one bundle_self_check data point per file-level structural check.
+  5  
+  6  Closes skill_without_verifier:21d380eb7bc25319. On promotion, this
+  7  file moves to skills/dashboard/verify.py.
+  8  
+  9  Foundation-2 conformant: deterministic, no LLM, declared inputs,
+ 10  audit budget under 80 lines. Helpers inlined for self-containment.
+ 11  &quot;&quot;&quot;
+ 12  from __future__ import annotations
+ 13  
+ 14  import ast
+ 15  import datetime as _dt
+ 16  import hashlib
+ 17  import json
+ 18  from pathlib import Path
+ 19  from typing import Any
+ 20  
+ 21  REPO_ROOT = Path(__file__).resolve().parents[3]
+ 22  SKILL_REL = &quot;skills/dashboard&quot;
+ 23  PY_FILES = (&quot;render.py&quot;, &quot;snapshot.py&quot;, &quot;narrate.py&quot;, &quot;html.py&quot;)
+ 24  
+ 25  COLLECTOR_ID = &quot;dashboard_verifier&quot;
+ 26  KIND = &quot;bundle_self_check&quot;
+ 27  VALUE_SCHEMA = {&quot;type&quot;: &quot;object&quot;, &quot;required&quot;: [&quot;check_id&quot;, &quot;verdict&quot;, &quot;reason&quot;]}
+ 28  INPUTS = [f&quot;{SKILL_REL}/SKILL.md&quot;] + [f&quot;{SKILL_REL}/{f}&quot; for f in PY_FILES]
+ 29  
+ 30  _LLM_DENY = (&quot;anthropic&quot;, &quot;openai&quot;, &quot;google.generativeai&quot;, &quot;cohere&quot;)</pre><details><summary>Promote / reject — copy-paste commands</summary><pre># Promote (writes one line to approvals/decisions.jsonl, then runs the promoter):
+mkdir -p approvals
+echo &#x27;{&quot;proposal_id&quot;:&quot;prop:2026-04-30:verifier-for-dashboard&quot;,&quot;verdict&quot;:&quot;promote&quot;,&quot;decided_at&quot;:&quot;$(date -Iseconds)&quot;,&quot;by&quot;:&quot;&lt;you&gt;&quot;}&#x27; &gt;&gt; approvals/decisions.jsonl
+python -m tools.promote prop:2026-04-30:verifier-for-dashboard --dry-run   # preview
+python -m tools.promote prop:2026-04-30:verifier-for-dashboard             # execute
+
+# Reject (records the decision; no file move):
+echo &#x27;{&quot;proposal_id&quot;:&quot;prop:2026-04-30:verifier-for-dashboard&quot;,&quot;verdict&quot;:&quot;reject&quot;,&quot;decided_at&quot;:&quot;$(date -Iseconds)&quot;,&quot;by&quot;:&quot;&lt;you&gt;&quot;,&quot;reason&quot;:&quot;&lt;short&gt;&quot;}&#x27; &gt;&gt; approvals/decisions.jsonl</pre></details></section><section class="proposal" id="prop:2026-04-30:verifier-for-regime-audit-report"><header class="proposal-header"><h2>prop:2026-04-30:verifier-for-regime-audit-report</h2><div><span class="badge proposed">status: proposed</span> <span class="badge pass">overall: pass</span></div></header><dl class="kv"><dt>Target skill</dt><dd><code>skills/regime_audit_report</code></dd><dt>Promotes to</dt><dd><code>skills/regime_audit_report/verify.py</code></dd><dt>Candidate</dt><dd><code>proposals/prop_2026-04-30_verifier-for-regime-audit-report/candidate/regime_audit_report_verifier.py</code> (108 total lines, collector_id <code>regime_audit_report_verifier</code>)</dd><dt>Claimed kind</dt><dd><code>bundle_self_check</code></dd></dl><h3>Provenance trail</h3><div class="provenance"><div class="prov-step"><strong>1. Gap measured</strong>by collector <code>skill_without_verifier</code> <br>at source_state <code>sha256:1bfd5aff1af964f17…</code><br>on 2026-04-30T13:17:11+00:00</div><div class="prov-arrow">→</div><div class="prov-step"><strong>2. Proposal drafted</strong>by orchestration <code>iter_10_overnight_loop</code><br>at <code>git:143135bbe7e90278bec5dc0191e9ed1f319aa7c7</code></div><div class="prov-arrow">→</div><div class="prov-step"><strong>3. Pre-verification ran</strong>at 2026-04-30T13:22:49+00:00<br>against the candidate file</div><div class="prov-arrow">→</div><div class="prov-step"><strong>4. Awaits operator</strong>writes a line to <code>approvals/decisions.jsonl</code></div></div><h3>The measured gap</h3><div class="gap-narrative">skills/regime_audit_report has SKILL.md but no verify.py — it claims structure (a render contract: stats.json -&gt; report.md) without a self-check that exits 0 iff the structure holds. The gap data point above is one of three emitted by skills/gap_audit/collectors/skill_without_verifier.py at source_state sha256:1bfd5aff... at iter 10.</div><h3>Pre-verification — what was checked, in plain language</h3><table class="checks"><thead><tr><th>Check</th><th>What it verifies</th><th>Result</th></tr></thead><tbody><tr><td><strong>Substantive lines ≤ 80</strong><br><code>audit_budget_under_80</code></td><td class="why">Foundation 2&#x27;s smallness rule. A small program&#x27;s diff is loud; a large program&#x27;s diff is camouflage. Reviewed in one sitting.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">80/80 lines</span></td></tr><tr><td><strong>Running the candidate against the live target skill — every check passed</strong><br><code>candidate_runs_clean_against_target</code></td><td class="why">End-to-end smoke test. The candidate is invoked against its declared INPUTS and every emitted bundle_self_check has verdict=pass.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">5/5 checks</span></td></tr><tr><td><strong>Two collect() runs produced byte-identical witnesses</strong><br><code>determinism_runtime_check</code></td><td class="why">Live confirmation that determinism holds — not just structurally absent banned imports, but actually deterministic in execution.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">5 records compared</span></td></tr><tr><td><strong>No anthropic / openai / google.generativeai / cohere imports</strong><br><code>no_llm_sdk_imports</code></td><td class="why">Bedrock rule: a 0.1 collector cannot depend on a language model. If it did, the bottom of the ladder would be a model output — circular grading.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>No random / uuid / secrets imports</strong><br><code>no_nondeterminism_imports</code></td><td class="why">Same source state must produce byte-identical output. datetime is allowed only inside provenance.collected_at, which Foundation 1 designates advisory and not load-bearing.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>Top-level COLLECTOR_ID, KIND, VALUE_SCHEMA, INPUTS declared</strong><br><code>required_constants_present</code></td><td class="why">Foundation 2 requires these as constants. Without them the candidate is not a recognizable collector — its kind, output schema, and read-surface are undeclared.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>collect() and verify() entry points exist</strong><br><code>required_functions_present</code></td><td class="why">Foundation 2&#x27;s two-function interface. collect() emits data points; verify() re-walks them. Without both, the collector cannot be re-run or self-checked.</td><td class="res"><span class="badge pass">pass</span> </td></tr></tbody></table><h3>Candidate source — first 30 lines</h3><pre class="preview">  1  &quot;&quot;&quot;Candidate verify.py for skills/regime_audit_report — a pure-render
+  2  skill (stats.json -&gt; report.md) with no collectors or orchestration.
+  3  Walks the skill&#x27;s source files and emits one bundle_self_check data
+  4  point per structural check.
+  5  
+  6  Closes skill_without_verifier:756c48fe81d375a5. On promotion, this
+  7  file moves to skills/regime_audit_report/verify.py.
+  8  
+  9  Foundation-2 conformant: deterministic, no LLM, declared inputs,
+ 10  audit budget under 80 lines. Helpers inlined so the candidate is
+ 11  self-contained and promotion does not require re-pathing imports.
+ 12  &quot;&quot;&quot;
+ 13  from __future__ import annotations
+ 14  
+ 15  import ast
+ 16  import datetime as _dt
+ 17  import hashlib
+ 18  import json
+ 19  from pathlib import Path
+ 20  from typing import Any
+ 21  
+ 22  REPO_ROOT = Path(__file__).resolve().parents[3]
+ 23  SKILL_REL = &quot;skills/regime_audit_report&quot;
+ 24  
+ 25  COLLECTOR_ID = &quot;regime_audit_report_verifier&quot;
+ 26  KIND = &quot;bundle_self_check&quot;
+ 27  VALUE_SCHEMA = {&quot;type&quot;: &quot;object&quot;, &quot;required&quot;: [&quot;check_id&quot;, &quot;verdict&quot;, &quot;reason&quot;]}
+ 28  INPUTS = [f&quot;{SKILL_REL}/SKILL.md&quot;, f&quot;{SKILL_REL}/render.py&quot;, f&quot;{SKILL_REL}/__init__.py&quot;]
+ 29  
+ 30  _LLM_DENY = (&quot;anthropic&quot;, &quot;openai&quot;, &quot;google.generativeai&quot;, &quot;cohere&quot;)</pre><details><summary>Promote / reject — copy-paste commands</summary><pre># Promote (writes one line to approvals/decisions.jsonl, then runs the promoter):
+mkdir -p approvals
+echo &#x27;{&quot;proposal_id&quot;:&quot;prop:2026-04-30:verifier-for-regime-audit-report&quot;,&quot;verdict&quot;:&quot;promote&quot;,&quot;decided_at&quot;:&quot;$(date -Iseconds)&quot;,&quot;by&quot;:&quot;&lt;you&gt;&quot;}&#x27; &gt;&gt; approvals/decisions.jsonl
+python -m tools.promote prop:2026-04-30:verifier-for-regime-audit-report --dry-run   # preview
+python -m tools.promote prop:2026-04-30:verifier-for-regime-audit-report             # execute
+
+# Reject (records the decision; no file move):
+echo &#x27;{&quot;proposal_id&quot;:&quot;prop:2026-04-30:verifier-for-regime-audit-report&quot;,&quot;verdict&quot;:&quot;reject&quot;,&quot;decided_at&quot;:&quot;$(date -Iseconds)&quot;,&quot;by&quot;:&quot;&lt;you&gt;&quot;,&quot;reason&quot;:&quot;&lt;short&gt;&quot;}&#x27; &gt;&gt; approvals/decisions.jsonl</pre></details></section><section class="proposal" id="prop:2026-04-30:verifier-for-subprotocol-for-claude-code"><header class="proposal-header"><h2>prop:2026-04-30:verifier-for-subprotocol-for-claude-code</h2><div><span class="badge proposed">status: proposed</span> <span class="badge pass">overall: pass</span></div></header><dl class="kv"><dt>Target skill</dt><dd><code>skills/subprotocol-for-claude-code</code></dd><dt>Promotes to</dt><dd><code>skills/subprotocol-for-claude-code/verify.py</code></dd><dt>Candidate</dt><dd><code>proposals/prop_2026-04-30_verifier-for-subprotocol-for-claude-code/candidate/subprotocol_for_claude_code_verifier.py</code> (100 total lines, collector_id <code>subprotocol_for_claude_code_verifier</code>)</dd><dt>Claimed kind</dt><dd><code>bundle_self_check</code></dd></dl><h3>Provenance trail</h3><div class="provenance"><div class="prov-step"><strong>1. Gap measured</strong>by collector <code>skill_without_verifier</code> <br>at source_state <code>sha256:1bfd5aff1af964f17…</code><br>on 2026-04-30T13:17:11+00:00</div><div class="prov-arrow">→</div><div class="prov-step"><strong>2. Proposal drafted</strong>by orchestration <code>iter_12_overnight_loop</code><br>at <code>git:7f2272b0ba878e070689afe36e05f7ffe0f9fa17</code></div><div class="prov-arrow">→</div><div class="prov-step"><strong>3. Pre-verification ran</strong>at 2026-04-30T14:00:26+00:00<br>against the candidate file</div><div class="prov-arrow">→</div><div class="prov-step"><strong>4. Awaits operator</strong>writes a line to <code>approvals/decisions.jsonl</code></div></div><h3>The measured gap</h3><div class="gap-narrative">skills/subprotocol-for-claude-code is the prior-art skill this experiment rides under. It carries SKILL.md + overlay.md + references/ + reports/ + scripts/, but no verify.py — its structural claims are made by prose, not walked by a checker. Closure: a per-file presence + per-script cleanliness check that exits 0 iff the named heterogeneous bundle holds.</div><h3>Pre-verification — what was checked, in plain language</h3><table class="checks"><thead><tr><th>Check</th><th>What it verifies</th><th>Result</th></tr></thead><tbody><tr><td><strong>Substantive lines ≤ 80</strong><br><code>audit_budget_under_80</code></td><td class="why">Foundation 2&#x27;s smallness rule. A small program&#x27;s diff is loud; a large program&#x27;s diff is camouflage. Reviewed in one sitting.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">74/80 lines</span></td></tr><tr><td><strong>Running the candidate against the live target skill — every check passed</strong><br><code>candidate_runs_clean_against_target</code></td><td class="why">End-to-end smoke test. The candidate is invoked against its declared INPUTS and every emitted bundle_self_check has verdict=pass.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">13/13 checks</span></td></tr><tr><td><strong>Two collect() runs produced byte-identical witnesses</strong><br><code>determinism_runtime_check</code></td><td class="why">Live confirmation that determinism holds — not just structurally absent banned imports, but actually deterministic in execution.</td><td class="res"><span class="badge pass">pass</span> <span class="metric">13 records compared</span></td></tr><tr><td><strong>No anthropic / openai / google.generativeai / cohere imports</strong><br><code>no_llm_sdk_imports</code></td><td class="why">Bedrock rule: a 0.1 collector cannot depend on a language model. If it did, the bottom of the ladder would be a model output — circular grading.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>No random / uuid / secrets imports</strong><br><code>no_nondeterminism_imports</code></td><td class="why">Same source state must produce byte-identical output. datetime is allowed only inside provenance.collected_at, which Foundation 1 designates advisory and not load-bearing.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>Top-level COLLECTOR_ID, KIND, VALUE_SCHEMA, INPUTS declared</strong><br><code>required_constants_present</code></td><td class="why">Foundation 2 requires these as constants. Without them the candidate is not a recognizable collector — its kind, output schema, and read-surface are undeclared.</td><td class="res"><span class="badge pass">pass</span> </td></tr><tr><td><strong>collect() and verify() entry points exist</strong><br><code>required_functions_present</code></td><td class="why">Foundation 2&#x27;s two-function interface. collect() emits data points; verify() re-walks them. Without both, the collector cannot be re-run or self-checked.</td><td class="res"><span class="badge pass">pass</span> </td></tr></tbody></table><h3>Candidate source — first 30 lines</h3><pre class="preview">  1  &quot;&quot;&quot;Candidate verify.py for skills/subprotocol-for-claude-code — the
+  2  prior-art skill this experiment rides under. Heterogeneous bundle:
+  3  SKILL.md, overlay.md, references/ (yaml + markdown), reports/, scripts/
+  4  (two Python utilities). Walks named files and emits one
+  5  bundle_self_check data point per check.
+  6  
+  7  Closes skill_without_verifier:b404f1c17d6e7d9d. On promotion, this
+  8  file moves to skills/subprotocol-for-claude-code/verify.py.
+  9  
+ 10  Foundation-2 conformant: deterministic, no LLM, declared inputs,
+ 11  audit budget under 80 lines. Helpers inlined for self-containment.
+ 12  &quot;&quot;&quot;
+ 13  from __future__ import annotations
+ 14  
+ 15  import ast
+ 16  import datetime as _dt
+ 17  import hashlib
+ 18  import json
+ 19  from pathlib import Path
+ 20  from typing import Any
+ 21  
+ 22  REPO_ROOT = Path(__file__).resolve().parents[3]
+ 23  SKILL_REL = &quot;skills/subprotocol-for-claude-code&quot;
+ 24  NAMED_FILES = (
+ 25      &quot;SKILL.md&quot;, &quot;overlay.md&quot;,
+ 26      &quot;references/domain-configuration-schema.md&quot;,
+ 27      &quot;references/domain-configuration.yaml&quot;,
+ 28      &quot;references/translation-map.md&quot;,
+ 29      &quot;scripts/setup-interview.py&quot;, &quot;scripts/sync.py&quot;,
+ 30  )</pre><details><summary>Promote / reject — copy-paste commands</summary><pre># Promote (writes one line to approvals/decisions.jsonl, then runs the promoter):
+mkdir -p approvals
+echo &#x27;{&quot;proposal_id&quot;:&quot;prop:2026-04-30:verifier-for-subprotocol-for-claude-code&quot;,&quot;verdict&quot;:&quot;promote&quot;,&quot;decided_at&quot;:&quot;$(date -Iseconds)&quot;,&quot;by&quot;:&quot;&lt;you&gt;&quot;}&#x27; &gt;&gt; approvals/decisions.jsonl
+python -m tools.promote prop:2026-04-30:verifier-for-subprotocol-for-claude-code --dry-run   # preview
+python -m tools.promote prop:2026-04-30:verifier-for-subprotocol-for-claude-code             # execute
+
+# Reject (records the decision; no file move):
+echo &#x27;{&quot;proposal_id&quot;:&quot;prop:2026-04-30:verifier-for-subprotocol-for-claude-code&quot;,&quot;verdict&quot;:&quot;reject&quot;,&quot;decided_at&quot;:&quot;$(date -Iseconds)&quot;,&quot;by&quot;:&quot;&lt;you&gt;&quot;,&quot;reason&quot;:&quot;&lt;short&gt;&quot;}&#x27; &gt;&gt; approvals/decisions.jsonl</pre></details></section></body></html>
