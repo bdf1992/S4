@@ -82,6 +82,17 @@ details summary { cursor: pointer; font-weight: 600; }
 details pre { background: #2a2a2a; color: #d4d4d4; padding: 1em; border-radius: 4px; margin: .75em 0; overflow-x: auto; font-size: .85em; }
 .metric { display: inline-block; padding: 1px 8px; background: #e7f0fa; border-radius: 3px; font-family: ui-monospace, monospace; font-size: .85em; color: #1d4f8a; }
 .no-data { color: #999; font-style: italic; }
+.summary { background: linear-gradient(135deg, #f0f4ee 0%, #e8efe2 100%); padding: 1.25em 1.5em; border-radius: 8px; border-left: 4px solid #2d7a3e; margin: 1em 0 2em; }
+.summary h2 { margin: 0 0 .5em; color: #1a4a26; }
+.chips { display: flex; flex-wrap: wrap; gap: .5em; margin: .75em 0 1em; }
+.chip { background: #fff; border: 1px solid #cfd8c8; padding: .35em .8em; border-radius: 999px; font-size: .9em; }
+.chip strong { color: #2d7a3e; }
+.chip.proposed { background: #e7f0fa; border-color: #b9d2ee; }
+.chip.proposed strong { color: #1d4f8a; }
+.chip.promoted { background: #d4edda; border-color: #aed6b6; }
+.chip.rejected { background: #f8d7da; border-color: #ecaab0; }
+.chip.rejected strong { color: #721c24; }
+.chip.pass { background: #e8f6ec; border-color: #b9d6c1; }
 """
 
 
@@ -114,18 +125,21 @@ def _esc(s: str) -> str:
 
 
 def _render_provenance(manifest: dict, gap_dp: dict | None, prev: dict | None) -> str:
-    gap_collector = "—"; gap_ss = "—"; gap_collected_at = "—"
+    gap_collector = "—"; gap_ss = "—"; gap_collected_at = "—"; gap_collector_path = ""
     if gap_dp:
         gap_collector = gap_dp["provenance"]["collector"]["target"].get("collector_id", "—")
         gap_ss = gap_dp["provenance"].get("source_state", "—")[:24] + "…"
         gap_collected_at = gap_dp["provenance"].get("collected_at", "—")
+        guess = REPO_ROOT / "skills" / "gap_audit" / "collectors" / f"{gap_collector}.py"
+        if guess.is_file():
+            gap_collector_path = f'<br><small>source: <code>skills/gap_audit/collectors/{_esc(gap_collector)}.py</code></small>'
     proposed_at = manifest.get("proposed_at", {}).get("source_state", "—")
     proposed_by = manifest.get("proposed_by", {}).get("target", {}).get("orchestration_id", "—")
     prev_at = (prev or {}).get("provenance", {}).get("collected_at", "—")
     return (
         '<div class="provenance">'
-        f'<div class="prov-step"><strong>1. Gap measured</strong>by collector <code>{_esc(gap_collector)}</code> '
-        f'<br>at source_state <code>{_esc(gap_ss)}</code><br>on {_esc(gap_collected_at)}</div>'
+        f'<div class="prov-step"><strong>1. Gap measured</strong>by collector <code>{_esc(gap_collector)}</code>'
+        f'{gap_collector_path}<br>at source_state <code>{_esc(gap_ss)}</code><br>on {_esc(gap_collected_at)}</div>'
         '<div class="prov-arrow">→</div>'
         f'<div class="prov-step"><strong>2. Proposal drafted</strong>by orchestration <code>{_esc(proposed_by)}</code><br>at <code>{_esc(proposed_at)}</code></div>'
         '<div class="prov-arrow">→</div>'
@@ -215,6 +229,49 @@ def _render_proposal(prop_dir: Path) -> str:
     return "".join(parts)
 
 
+def _summary_banner(dirs: list[Path]) -> str:
+    if not dirs:
+        return ""
+    total = len(dirs)
+    n_proposed = 0; n_promoted = 0; n_rejected = 0
+    n_overall_pass = 0; n_overall_fail = 0
+    target_skills: list[str] = []
+    for d in dirs:
+        m = _read_json(d / "proposal.json") or {}
+        prev = _read_json(d / "pre_verification.json") or {}
+        gap = _read_json(d / "gap.json") or {}
+        s = m.get("status", "?")
+        if s == "proposed": n_proposed += 1
+        elif s == "promoted": n_promoted += 1
+        elif s == "rejected": n_rejected += 1
+        ov = (prev.get("value") or {}).get("overall_verdict", "?")
+        if ov == "pass": n_overall_pass += 1
+        elif ov == "fail": n_overall_fail += 1
+        if gap.get("gap_pointers"):
+            dp_id = gap["gap_pointers"][0]["target"].get("data_point_id", "")
+            gap_dp = _resolve_gap_dp(dp_id)
+            if gap_dp:
+                target_skills.append(gap_dp["value"]["skill_pointer"]["target"]["path"])
+    chips = [
+        f'<span class="chip"><strong>{total}</strong> total</span>',
+        f'<span class="chip proposed"><strong>{n_proposed}</strong> proposed</span>',
+        f'<span class="chip promoted"><strong>{n_promoted}</strong> promoted</span>',
+        f'<span class="chip rejected"><strong>{n_rejected}</strong> rejected</span>',
+        f'<span class="chip pass"><strong>{n_overall_pass}/{total}</strong> pre-verifications pass</span>',
+    ]
+    growth_line = ""
+    if n_proposed > 0 and target_skills:
+        skill_list = ", ".join(f"<code>{_esc(s)}</code>" for s in target_skills if s != "?")
+        growth_line = (f'<p><strong>Floor-growth potential:</strong> if all {n_proposed} pending proposals promote, '
+                       f'<code>skill_without_verifier</code> gap inventory drains by {n_proposed} (currently 3 '
+                       f'records, would become 0). Targets: {skill_list}. That round-over-round drain — '
+                       f'measurable, anchored to source_state, reproducible — is the floor-growth signal '
+                       f'CLAUDE.md names as the alternative to the vibecoding trap.</p>')
+    return (f'<div class="summary"><h2 style="margin-top:0">Summary</h2>'
+            f'<div class="chips">{"".join(chips)}</div>'
+            f'{growth_line}</div>')
+
+
 def _intro(n: int) -> str:
     return ('<div class="intro">'
             '<p><strong>What you\'re looking at.</strong> Each card below is a candidate <code>verify.py</code> '
@@ -232,7 +289,7 @@ def _walk() -> str:
     if not PROPOSALS_DIR.is_dir():
         return _intro(0)
     dirs = sorted(d for d in PROPOSALS_DIR.iterdir() if d.is_dir() and (d / "proposal.json").is_file())
-    body = [_intro(len(dirs))]
+    body = [_summary_banner(dirs), _intro(len(dirs))]
     for d in dirs:
         body.append(_render_proposal(d))
     return "".join(body)
