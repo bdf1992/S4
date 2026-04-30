@@ -15,4 +15,4 @@ The orchestration log every leash and audit emits — `skills/*/outputs/run-*/or
 
 ## What's *not* here yet (deferred)
 
-- **Trace-conformity 0.2 model.** A gradient-driven graph of state-based machines fit to logged trajectories, predicting whether a given run's activation sequence matches the shape of past runs that emitted at the desired claim level. With both prereqs in place the 0.2 design doc earns its weight: it can name actual features the corpus contains, and the honesty measurements will weight which activations should count toward the trajectory match.
+- **Trace-conformity 0.2 model implementation.** Architecture is committed at [0_2_design.md](0_2_design.md): a probabilistic finite-state machine over the trace, with shared decision-id embeddings, edge weights parameterized per `(fence_id, verdict, branch_taken)`, per-skill linear heads, gradient-fit on trace likelihood, leave-one-run-out cross-validation. The doc names what is committed and what is deferred to implementation, plus the corpus gaps that prevent `verdict=ready` from firing today (zero `claim:0.4` runs, 9 of 12 tuples monotone). Implementation step is a clean punch list.
