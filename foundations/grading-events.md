@@ -43,15 +43,58 @@ The foundations are the bedrock everything leans on. Their shape is the load-bea
 
 **Status:** PENDING — no foundation file has been modified. This event is queued. The operator must approve before any of the proposed changes are made.
 
-**If approved**, the work is staged as a sequence:
-- (a) Commit a `pyproject.toml` and install pydantic/radon (pre-req).
-- (b) Refactor `lib/data_point.py` to construct PROV-JSON-conformant records; refactor `lib/audit.py` to consult radon. Re-run verify; ensure clean.
-- (c) Refactor `foundations/data-point.md`, `collection-program.md`, `zero-four.md` to cite the standards in (a) and (b). One commit per foundation. Reference this event number (Event 001) in each commit message.
-- (d) Re-run verify against all bundles; regenerate any data points whose provenance shape changed.
-- (e) Update [skills/leash_for_hooks/SKILL.md](../skills/leash_for_hooks/SKILL.md) bedrock-pointer table to reference the new shapes.
-- (f) Mark this event RESOLVED with the commit SHAs in the resolution block.
+**Two execution branches (operator picks one):**
 
-**Resolution:** *(not yet resolved)*
+### Plan A — APPROVE: execute the foundation grounding
+
+Sequence (8–10 commits, ~4–6h of agent work, medium-high risk because every collector is touched):
+
+| # | Action | Commit |
+| --- | --- | --- |
+| A.1 | Create `pyproject.toml` at repo root per [PEP 518](https://peps.python.org/pep-0518/) + [PEP 621](https://peps.python.org/pep-0621/). Declare deps `pydantic>=2`, `radon`, `prov` (optional). Run `pip install -e .` once. | `event-001/a1: pyproject.toml + deps` |
+| A.2 | New file `skills/leash_for_hooks/lib/schemas.py` — Pydantic v2 models for each KIND (`LlmSdkDenylistEntry`, `HookEventDecl`, `HookConfig`, `ExemplarBundleState`, `BundleSelfCheck`). Export each as `<KIND>_SCHEMA = Model.model_json_schema()` for collectors to import. | `event-001/a2: pydantic schemas + JSON Schema exports` |
+| A.3 | Refactor `lib/data_point.py` — `make_data_point` constructs PROV-JSON record (`prov:Entity` for the data point + source snapshot, `prov:Activity` for the run, `prov:SoftwareAgent` for the collector, relations `wasGeneratedBy` / `used` / `wasAssociatedWith`). Replace `provenance` field with `prov` field carrying the PROV-JSON object. Validate `value` against the per-KIND Pydantic model on emit. | `event-001/a3: PROV-DM provenance + Pydantic value validation` |
+| A.4 | Refactor `lib/audit.py` — replace `_substantive_line_count` with `radon.complexity.cc_visit` and `radon.metrics.mi_visit`. New thresholds: `MAX_CC = 10`, `MAX_STATEMENTS = 50`, `MAX_MODULE_LINES = 1000`. Cite McCabe 1976 (DOI 10.1109/TSE.1976.233837), NIST SP 500-235, Pylint defaults in module docstring. | `event-001/a4: cyclomatic-complexity audit (radon)` |
+| A.5 | Adopt the new `make_data_point` signature in each of the 4 collectors. Drop their per-collector schema dicts (now imported from `lib/schemas.py`). Run each collector; confirm output validates. | `event-001/a5: collectors adopt new schemas + provenance` |
+| A.6 | Rewrite `foundations/data-point.md` to cite W3C PROV-DM (https://www.w3.org/TR/prov-dm/), PROV-JSON (https://www.w3.org/Submission/prov-json/), JSON Schema 2020-12 (https://json-schema.org/specification), Pydantic v2 (https://docs.pydantic.dev/latest/). Reference Event 001 in the file header. | `event-001/a6: foundation data-point.md cites PROV + JSON Schema` |
+| A.7 | Rewrite `foundations/collection-program.md` to cite cyclomatic-complexity standards (McCabe / NIST / Pylint defaults / Ruff C901 / Radon ranks). Reference Event 001. | `event-001/a7: foundation collection-program.md cites complexity stds` |
+| A.8 | Rewrite `foundations/zero-four.md` orchestration-budget rule to cite the same. Reference Event 001. | `event-001/a8: foundation zero-four.md cites complexity stds` |
+| A.9 | Re-run verify against the skill bundle and the most recent output bundle. Regenerate stale datasets if provenance shape moved. | `event-001/a9: regenerate datasets, verify clean` |
+| A.10 | Update `skills/leash_for_hooks/SKILL.md` bedrock-pointer table and recursion-seam.md (if shapes changed). Mark Event 001 RESOLVED in this file with all commit SHAs. | `event-001/a10: SKILL.md + RESOLVED` |
+
+**Approval phrase:** "Plan A approved" or "execute Event 001 Plan A".
+
+### Plan B — REJECT: close out as not-worth-the-migration-cost
+
+Sequence (1 commit, ~30min, zero risk — paperwork only):
+
+| # | Action | Commit |
+| --- | --- | --- |
+| B.1 | Add a one-paragraph "Un-grounding disclosure" block to the top of each of the four foundation files: *"This foundation is hardcoded from CLAUDE.md without external citation. Event 001 documented the gap and was rejected on YYYY-MM-DD per operator decision; the bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions."* | `event-001/b1: foundations carry un-grounding disclosure; Event 001 REJECTED` |
+
+Plus mark this event REJECTED with the operator's rationale and the file SHAs of the disclosure-stamped foundations.
+
+**Re-trigger conditions to log when rejecting** (so a future session knows when to re-open the event):
+- A sibling leash for a non-Claude-Code surface needs the data-point provenance to be portable across machines / tools — un-grounded shape will fail.
+- An external collaborator wants to consume the data points emitted by this experiment — they cannot do so without a published schema.
+- Audit budget LOC count starts producing false positives or false negatives that complexity would catch correctly.
+- Any of the foundations needs to change for any other reason — fold the grounding refactor into that change rather than doing two grading events.
+
+**Approval phrase:** "Plan B" or "reject Event 001".
+
+### Refining the plan
+
+Either branch can be edited before execution. Common refinements:
+
+- "Plan A but skip the cyclomatic-complexity refactor" — drops A.4, A.7; keep PROV + Pydantic.
+- "Plan A but do PROV only" — drops A.2, A.4, A.7; keep PROV + the existing audit.
+- "Plan A but use jsonschema instead of Pydantic" — A.2 emits raw JSON Schema dicts, A.3 validates with `jsonschema.validate`. Lighter dep weight; loses IDE typing.
+
+**Resolution:** *(not yet resolved — awaiting operator pick of Plan A / Plan B / refinement)*
+
+---
+
+**Handoff document for fresh-Claude:** [meeting-notes/2026-04-29-handoff-event-001-decision.md](../meeting-notes/2026-04-29-handoff-event-001-decision.md) — read on session start to orient.
 
 ---
 
