@@ -129,3 +129,4 @@ The loop will keep cycling at a longer cadence (~50min) and re-checking. If git 
 Lightweight per-iteration trail confirming the loop fired, observed no state change, and held the leash. Each line is structured: `iter N · UTC time · HEAD short-sha · status`.
 
 - iter 4 · 02:06 local · HEAD `9cf0b48` · still blocked on operator decisions; no-op
+- iter 5 · 03:08 local · HEAD `bd5afef` · still blocked; upstream dataset mtime unchanged; no-op
