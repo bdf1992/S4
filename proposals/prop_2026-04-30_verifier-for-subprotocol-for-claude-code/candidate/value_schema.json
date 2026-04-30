@@ -1,0 +1,11 @@
+{
+  "kind": "bundle_self_check",
+  "type": "object",
+  "required": ["check_id", "verdict", "reason"],
+  "properties": {
+    "check_id": {"type": "string"},
+    "verdict": {"enum": ["pass", "fail"]},
+    "reason": {"type": "string"}
+  },
+  "additionalProperties": false
+}

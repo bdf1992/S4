@@ -1,0 +1,80 @@
+{
+  "id": "subprotocol_for_claude_code_verifier_pre_verification:246b56df0e1d2457",
+  "kind": "pre_verification_summary",
+  "provenance": {
+    "collected_at": "2026-04-30T14:00:26+00:00",
+    "collector": {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": null
+      },
+      "kind": "orchestration",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "orchestration_resolver",
+      "target": {
+        "orchestration_id": "iter_12_loop_drafting"
+      }
+    },
+    "source_state": "git:HEAD@iter_12_drafting"
+  },
+  "value": {
+    "candidate_path": "proposals/prop_2026-04-30_verifier-for-subprotocol-for-claude-code/candidate/subprotocol_for_claude_code_verifier.py",
+    "checks": {
+      "audit_budget_under_80": {
+        "budget": 80,
+        "substantive_lines": 74,
+        "verdict": "pass"
+      },
+      "candidate_runs_clean_against_target": {
+        "checks_passed": 13,
+        "checks_total": 13,
+        "verdict": "pass"
+      },
+      "determinism_runtime_check": {
+        "method": "two collect() calls, same source_state, all witnesses identical",
+        "records_compared": 13,
+        "verdict": "pass"
+      },
+      "no_llm_sdk_imports": {
+        "all_imports": [
+          "__future__",
+          "ast",
+          "datetime",
+          "hashlib",
+          "json",
+          "pathlib",
+          "typing"
+        ],
+        "banned_matches": [],
+        "verdict": "pass"
+      },
+      "no_nondeterminism_imports": {
+        "banned_matches": [],
+        "note": "datetime IS imported but is only used for provenance.collected_at, advisory per Foundation 1.",
+        "verdict": "pass"
+      },
+      "required_constants_present": {
+        "found": [
+          "COLLECTOR_ID",
+          "INPUTS",
+          "KIND",
+          "VALUE_SCHEMA"
+        ],
+        "missing": [],
+        "verdict": "pass"
+      },
+      "required_functions_present": {
+        "found": [
+          "collect",
+          "verify"
+        ],
+        "missing": [],
+        "verdict": "pass"
+      }
+    },
+    "overall_verdict": "pass"
+  },
+  "witness": "246b56df0e1d2457"
+}

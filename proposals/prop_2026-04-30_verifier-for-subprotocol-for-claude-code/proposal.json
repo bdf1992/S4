@@ -1,0 +1,53 @@
+{
+  "proposal_id": "prop:2026-04-30:verifier-for-subprotocol-for-claude-code",
+  "claimed_kind": "bundle_self_check",
+  "status": "proposed",
+  "proposed_at": {
+    "source_state": "git:7f2272b0ba878e070689afe36e05f7ffe0f9fa17"
+  },
+  "proposed_by": {
+    "kind": "orchestration",
+    "target": {"orchestration_id": "iter_12_overnight_loop"},
+    "resolver": "orchestration_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "candidate_pointer": {
+    "kind": "collector",
+    "target": {
+      "collector_id": "subprotocol_for_claude_code_verifier",
+      "path": "proposals/prop_2026-04-30_verifier-for-subprotocol-for-claude-code/candidate/subprotocol_for_claude_code_verifier.py"
+    },
+    "resolver": "collector_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:b404f1c17d6e7d9d"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:1bfd5aff1af964f178df3f860f7aeaca41d564d36b93d3f3bf831d453acedcc8",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "pre_verification_pointer": {
+    "kind": "data_point",
+    "target": {"data_point_id": "subprotocol_for_claude_code_verifier_pre_verification:246b56df0e1d2457"},
+    "resolver": "data_point_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "decision_record_pointer": null
+}

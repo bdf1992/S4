@@ -1,0 +1,17 @@
+{
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:b404f1c17d6e7d9d"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:1bfd5aff1af964f178df3f860f7aeaca41d564d36b93d3f3bf831d453acedcc8",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "narrative": "skills/subprotocol-for-claude-code is the prior-art skill this experiment rides under. It carries SKILL.md + overlay.md + references/ + reports/ + scripts/, but no verify.py — its structural claims are made by prose, not walked by a checker. Closure: a per-file presence + per-script cleanliness check that exits 0 iff the named heterogeneous bundle holds."
+}
