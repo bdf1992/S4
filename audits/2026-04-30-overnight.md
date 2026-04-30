@@ -179,3 +179,45 @@ Recorded as a Foundation-1 data point in `pre_verification.json` with id `regime
 ### Loop prompt fix applied to next ScheduleWakeup
 
 The `## Operator decisions needed → END the iteration` rule is removed. Replaced with: take the most defensible interpretation, log under `## Decisions taken` with a one-line revert path, proceed. Only stop for the four hard boundaries (bedrock mutation, auto-promote, push/amend/reset, free-write live 0.1 outside proposal envelope). Future loop fires use the corrected prompt.
+
+---
+
+## Iteration 11 — second proposal + promoter bootstrap
+
+Two more commits, both forward motion. The /loop wakeup args still carried the old prompt (likely a stale schedule from iter 9), but applied the corrected pattern from memory + iter-10 feedback.
+
+### Decisions taken (revertable)
+
+- **D-iter11-1 — Promoter at `tools/promote.py`.** Top-level new directory, single-file 124-line action program. Promoter spans `proposals/` ↔ `skills/`; belongs to neither. Not a Foundation-2 collector (emits no data points), so the proposal envelope doesn't apply. Revert: delete `tools/`.
+- **D-iter11-2 — Drafted dashboard verifier before subprotocol-for-claude-code.** Of the two remaining gap records, dashboard's structure (4 Python entry points + SKILL.md) is closer to regime_audit_report's, so the verifier pattern transferred cleanly. subprotocol-for-claude-code is mostly markdown + 2 scripts, which wants a different verifier shape — queued for iter 12. Revert: delete `proposals/prop_2026-04-30_verifier-for-dashboard/`.
+
+### Floor growth this iteration
+
+| Component | Commit | What it adds |
+| --- | --- | --- |
+| [proposals/prop_2026-04-30_verifier-for-dashboard/](../proposals/prop_2026-04-30_verifier-for-dashboard/) | `49d1467` | Second proposal. Candidate batches 17 file-level checks (1 SKILL.md + 4 per Python entry point × 4 entry points). 76/80 lines. 17/17 target checks pass. All Foundation-2 validators green at draft-time. |
+| [tools/promote.py](../tools/promote.py) | `1b8fddc` | Bootstrap promoter. Reads `approvals/decisions.jsonl`, refuses without a `promote` verdict, refuses to overwrite existing target. Sanity-checked via dry-run against the first proposal: correctly exits 2 (no decision record). |
+
+### Promotion path now operational
+
+Once the operator wakes and decides:
+
+```bash
+# 1. Operator writes a line to approvals/decisions.jsonl with verdict=promote
+mkdir -p approvals
+echo '{"proposal_id":"prop:2026-04-30:verifier-for-regime-audit-report","verdict":"promote","decided_at":"<iso>","by":"<operator>"}' >> approvals/decisions.jsonl
+
+# 2. Dry-run preview
+python -m tools.promote prop:2026-04-30:verifier-for-regime-audit-report --dry-run
+
+# 3. Promote
+python -m tools.promote prop:2026-04-30:verifier-for-regime-audit-report
+```
+
+The promoter copies `candidate/regime_audit_report_verifier.py` to `skills/regime_audit_report/verify.py`, updates the proposal's status to `promoted`, and sets `decision_record_pointer`. Same flow for the dashboard proposal once that decision is written.
+
+### What's queued for iter 12
+
+- Third proposal: verifier for `subprotocol-for-claude-code` (the remaining gap record). Different verifier shape — checks markdown content (overlay.md, references/, reports/) plus 2 Python scripts. ~80 lines once trimmed.
+- Possibly a `claim_with_broken_probe` collector if dangling_file should be surfaced as a gap kind too (operator decision still implicit; defensible call available either way).
+- Re-run all gap-collectors after any operator promotion to confirm gap counts shrink as expected.
