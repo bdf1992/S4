@@ -1,0 +1,17 @@
+{
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:facde0e22db9ffb6"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:ff944c33c40341501bf3ef84cb66dc3c6fef0db6581671e1ea644c57925d586d",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "narrative": "skills/orchestration_audit has SKILL.md (Foundation-2 collector skill that turns 0.3 self-report from orchestration-log.jsonl into 0.1 measurement) and a populated dataset, but no verify.py. Without a self-check, the skill's claim — `0.3 self-report → 0.1 measurement` — is asserted by SKILL.md prose, not checked by walker. The gap data point above is one of four emitted by skills/gap_audit/collectors/skill_without_verifier.py at source_state sha256:ff944c33... at iter 14+. Closure: a per-file structural+import check that exits 0 iff SKILL.md is present, both Python files exist/parse/import-clean, and both dataset files are present (the collector’s output is load-bearing for the skill’s 0.1 claim)."
+}

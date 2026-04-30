@@ -1,0 +1,53 @@
+{
+  "proposal_id": "prop:2026-04-30:verifier-for-orchestration-audit",
+  "claimed_kind": "bundle_self_check",
+  "status": "proposed",
+  "proposed_at": {
+    "source_state": "git:4d5051291f5c2c02c302a7b3bce1685e1fd1e65d"
+  },
+  "proposed_by": {
+    "kind": "orchestration",
+    "target": {"orchestration_id": "iter_15_loop_drafting"},
+    "resolver": "orchestration_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "candidate_pointer": {
+    "kind": "collector",
+    "target": {
+      "collector_id": "orchestration_audit_verifier",
+      "path": "proposals/prop_2026-04-30_verifier-for-orchestration-audit/candidate/orchestration_audit_verifier.py"
+    },
+    "resolver": "collector_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:facde0e22db9ffb6"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:ff944c33c40341501bf3ef84cb66dc3c6fef0db6581671e1ea644c57925d586d",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "pre_verification_pointer": {
+    "kind": "data_point",
+    "target": {"data_point_id": "orchestration_audit_verifier_pre_verification:490080884dcf37bb"},
+    "resolver": "data_point_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "decision_record_pointer": null
+}
