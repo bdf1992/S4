@@ -1,0 +1,13 @@
+{
+  "id": "D-006",
+  "subject": "boards/ system — kanban geometry not grounded",
+  "kind": "authored_not_grounded",
+  "principal": "The boards/ system's geometry — column axis, severity lane, edges (depends_on / blocks), card schema (id, subject, status, severity, last_updated_at, depends_on, payoff, re_trigger) — is authored from the operator's framing of 'kanban as engine to derive data.' No citation to a published kanban specification or schema. The column/lane/edge model is a folk synthesis; the baseline card schema is implicit in boards/__main__.py and the per-adapter cards() returns rather than formally documented in boards/schema.md.",
+  "interest": "Same shape as D-001 / D-002 / D-003 for the bedrock: any external consumer of board outputs cannot read our shape without our prose, and the system carries an authored geometry that nothing validates against a public contract. The 'engineering, not theatre' claim is weaker for boards/ for the same reason it's weaker for the bedrock — the gap is cosmetic in practice but real in principle.",
+  "payoff": "Either (a) write boards/schema.md formalizing the baseline card schema explicitly, with one-line notes on which kanban traditions inspired which fields (David J. Anderson's Kanban Method 2010 for column-as-workflow-state; Eric Ries-style cumulative flow for needs_attention vs healthy; Atlassian Jira's epic/story relations for depends_on / blocks). This makes the gap precise — locally-defined-and-documented, not silently authored. Or (b) align with a published JSON schema if one emerges (no widely-adopted one exists today as of 2026-04). Land (a) first; (b) is contingent on a standard appearing.",
+  "severity": "cosmetic",
+  "status": "open",
+  "re_trigger": "another tool wants to consume our board outputs (e.g., a 0.4 emission gate that fences on board state), OR a published kanban-data schema emerges that we'd want to align with, OR the boards system grows a third major axis (beyond column/lane/edges) and the implicit schema starts diverging across adapters",
+  "created_at": "2026-04-29",
+  "last_updated_at": "2026-04-29"
+}
