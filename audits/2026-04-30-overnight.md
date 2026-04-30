@@ -90,3 +90,34 @@ None hard. One soft tension flagged for review (below).
 2. **Gap-collector scope** *(decision punted to iteration 3 unless flipped)*. Should `claim_without_probe.py` also surface `dangling_file` records, or is that a different concept (broken-claim) that wants its own collector? Current collector deliberately covers only `anchor_unverified`. Splitting keeps each collector single-purpose; merging gives the operator one place to look.
 
 3. **Upstream dataset refresh** *(loop respected the hard constraint, deferring to you)*. The live `markdown_claims.jsonl` predates this overnight session. A fresh claim_audit run would likely populate `anchor_unverified` records (the new prose under `foundations/proposal.md` has section-anchored links). Whether to refresh is an operator action; the loop won't touch existing skills' persisted state.
+
+---
+
+## Iteration 3
+
+**Goal:** Persist the gap-collector's output as a structured dataset artifact.
+
+**Result:** committed [skills/gap_audit/datasets/2026-04-30/](../skills/gap_audit/datasets/2026-04-30/) at `6897a93`. Two files:
+- `claim_without_probe.jsonl` — zero-length (0 records, as expected from iteration 2's sanity check)
+- `claim_without_probe.source_state` — `sha256:d9a8b56861b1673f...` (anchors the dataset to the exact upstream state walked)
+
+**Why persist an empty file:** anchoring zero-records to a specific source_state makes drift measurable. A future run that emits N>0 records against a different source_state is the floor-growth signal we're here to capture. "The pipeline ran and saw nothing" is information; without persistence, it's a non-event that leaves no trace.
+
+**Verification done in this iteration:**
+- Schema validator passed for all 0 records (vacuously).
+- Determinism re-run passed: two collect() invocations produced byte-identical witnesses and ids.
+- The dataset directory follows the date-bucketed pattern (`datasets/2026-04-30/`) — gap_audit captures a series-over-time, distinct from claim_audit's snapshot-of-current.
+
+## Iteration 4 status — BLOCKED on operator input
+
+Iteration 4 (step 4 of the loop spec: draft candidate 0.1 collectors from gap data points) requires at least one gap data point to anchor a proposal's `gap_pointers` field. Today's persisted dataset has zero records, so there is nothing to draft against.
+
+The loop did not free-write a proposal without a measured gap — that's the request-driven-0.1 anti-pattern the proposal contract closes by construction (a proposal with empty `gap_pointers` fails the schema validator).
+
+**The loop is now waiting on operator input.** All three decisions from iteration 2 remain open and now genuinely block further useful work:
+
+1. **Sample-mechanism design** — current shape is declarative-only; needs your call before more proposals (which will all need a `candidate/sample/`) get drafted.
+2. **Gap-collector scope** — broadening to include `dangling_file` would immediately produce 5 gap data points to anchor proposals against. Narrowing keeps the architecture clean. Either is defensible.
+3. **Upstream dataset refresh** — the most direct unblock for the existing `anchor_unverified` scope. A fresh claim_audit run would likely produce gap records to act on tomorrow.
+
+The loop will keep cycling at a longer cadence (~50min) and re-checking. If git state changes between now and morning (e.g. you wake briefly, refresh claim_audit, sleep again), the next iteration will pick up the new state and resume drafting proposals.
