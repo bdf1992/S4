@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "signal_id": "trace_conformity",
+  "description": "Fixed probe set per skills/orchestration_audit/0_2_design.md. Each probe is an input trace with the expected verdict envelope. The signal must produce verdict matching `expected.verdict` for the bundle's verify.py to exit 0.",
+  "probes": [
+    {
+      "probe_id": "empty_trace",
+      "rationale": "Empty trace has no activations; the model has no signal beyond bias. Verdict should not be 'ready' under any circumstances.",
+      "trace": [],
+      "expected": {
+        "verdict_in": ["not_ready", "inconclusive"],
+        "confidence_max": 0.5
+      }
+    },
+    {
+      "probe_id": "leash_hooks_candidate_replay",
+      "rationale": "Replay of a known leash_for_hooks run that ended at claim:candidate. The model should predict top_class=candidate, verdict=not_ready, with high confidence (training-set sanity check).",
+      "trace": [
+        {"skill_id": "leash_for_hooks", "run_id": "probe", "sequence_index": 0,
+         "decision_id": "toggle_check", "fence_id": "leash_state", "branch_taken": "leashed",
+         "input_keys": ["event"], "result_keys": ["leashed", "reason", "state"],
+         "verdict": null, "confidence": null, "run_claim": "candidate"},
+        {"skill_id": "leash_for_hooks", "run_id": "probe", "sequence_index": 1,
+         "decision_id": "event_validity", "fence_id": "hook_event_decl", "branch_taken": "valid",
+         "input_keys": ["event"], "result_keys": ["known_events", "verdict"],
+         "verdict": "valid", "confidence": null, "run_claim": "candidate"},
+        {"skill_id": "leash_for_hooks", "run_id": "probe", "sequence_index": 2,
+         "decision_id": "collision_check", "fence_id": "hook_collision", "branch_taken": "clear",
+         "input_keys": ["command", "event", "matcher"], "result_keys": ["confidence", "evidence_pointers", "verdict"],
+         "verdict": "clear", "confidence": 0.0, "run_claim": "candidate"},
+        {"skill_id": "leash_for_hooks", "run_id": "probe", "sequence_index": 3,
+         "decision_id": "emission_gate", "fence_id": "emission_readiness", "branch_taken": "not_ready",
+         "input_keys": [], "result_keys": ["confidence", "evidence_pointers", "gap_record", "verdict"],
+         "verdict": "not_ready", "confidence": 0.0, "run_claim": "candidate"}
+      ],
+      "expected": {
+        "top_class": "candidate",
+        "verdict_in": ["not_ready"],
+        "confidence_min": 0.5
+      }
+    },
+    {
+      "probe_id": "regime_audit_aggregated_replay",
+      "rationale": "Replay of a regime_audit run that ended at claim:aggregated. The model should predict top_class=aggregated, verdict=inconclusive (non-0.4 success class).",
+      "trace": [
+        {"skill_id": "regime_audit", "run_id": "probe", "sequence_index": 0,
+         "decision_id": "dataset_present", "fence_id": "regime_classification", "branch_taken": "present",
+         "input_keys": ["row_count"], "result_keys": ["verdict"],
+         "verdict": "present", "confidence": null, "run_claim": "aggregated"},
+        {"skill_id": "regime_audit", "run_id": "probe", "sequence_index": 1,
+         "decision_id": "distribution_fit", "fence_id": "regime_distribution", "branch_taken": "aggregated",
+         "input_keys": [], "result_keys": ["matching_count", "verdict"],
+         "verdict": "aggregated", "confidence": null, "run_claim": "aggregated"}
+      ],
+      "expected": {
+        "top_class": "aggregated",
+        "verdict_in": ["inconclusive"],
+        "confidence_min": 0.5
+      }
+    },
+    {
+      "probe_id": "no_target_class_corpus",
+      "rationale": "On any non-empty trace, since the corpus has zero claim:0.4 runs, the model cannot predict 0.4 as top class. The gap_record must report missing_target_class='0.4' on every non-ready emission.",
+      "trace": [
+        {"skill_id": "claim_audit", "run_id": "probe", "sequence_index": 0,
+         "decision_id": "dataset_present", "fence_id": "markdown_claims", "branch_taken": "present",
+         "input_keys": ["row_count"], "result_keys": ["verdict"],
+         "verdict": "present", "confidence": null, "run_claim": "healthy"}
+      ],
+      "expected": {
+        "verdict_not_in": ["ready"],
+        "gap_record_must_contain": ["missing_target_class"]
+      }
+    }
+  ]
+}
