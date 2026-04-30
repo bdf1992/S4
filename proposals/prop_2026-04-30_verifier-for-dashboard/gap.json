@@ -1,0 +1,17 @@
+{
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:21d380eb7bc25319"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:1bfd5aff1af964f178df3f860f7aeaca41d564d36b93d3f3bf831d453acedcc8",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "narrative": "skills/dashboard has SKILL.md and four Python entry points (render, snapshot, narrate, html) but no verify.py. The dashboard claims to be 0.1 deterministic with no LLM in renders; without a verify.py, that claim is asserted by prose, not checked by walker. Closure: a per-file structural+import check that exits 0 iff each entry point is present, parses, and imports nothing from the LLM-SDK or nondeterminism denylists."
+}

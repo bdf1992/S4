@@ -1,0 +1,53 @@
+{
+  "proposal_id": "prop:2026-04-30:verifier-for-dashboard",
+  "claimed_kind": "bundle_self_check",
+  "status": "proposed",
+  "proposed_at": {
+    "source_state": "git:9caa3e7493e91f65c0667df6df354297e00bf9c6"
+  },
+  "proposed_by": {
+    "kind": "orchestration",
+    "target": {"orchestration_id": "iter_11_overnight_loop"},
+    "resolver": "orchestration_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "candidate_pointer": {
+    "kind": "collector",
+    "target": {
+      "collector_id": "dashboard_verifier",
+      "path": "proposals/prop_2026-04-30_verifier-for-dashboard/candidate/dashboard_verifier.py"
+    },
+    "resolver": "collector_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:21d380eb7bc25319"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:1bfd5aff1af964f178df3f860f7aeaca41d564d36b93d3f3bf831d453acedcc8",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "pre_verification_pointer": {
+    "kind": "data_point",
+    "target": {"data_point_id": "dashboard_verifier_pre_verification:49224b31d1df5d3f"},
+    "resolver": "data_point_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "decision_record_pointer": null
+}
