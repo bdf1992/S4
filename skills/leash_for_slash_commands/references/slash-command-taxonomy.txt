@@ -1,0 +1,25 @@
+# Reserved slash-command names.
+#
+# This file is the closed enumeration of names that user-authored slash
+# commands MAY NOT shadow. Any user-authored command whose name appears
+# here is a 0.1 dataset-membership rejection in orchestrate.py
+# (decision: name_validity).
+#
+# Format: one reserved name per line, lowercase, no leading slash.
+# Lines starting with "#" are comments; blank lines are skipped.
+#
+# Source: Claude Code's built-in command surface as observed in the CLI
+# help output. Not exhaustive of every plugin-supplied skill; reserved
+# means "shadowing this name from a user-authored command would create
+# real ambiguity," not "this name is the only legal command."
+#
+# Updating this file is itself a 0.4 grading event — the dataset shifts.
+help
+clear
+config
+fast
+init
+review
+schedule
+loop
+simplify

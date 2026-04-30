@@ -1,8 +1,38 @@
-# Recursion seam — how this leash spawns sibling leashes
+# Recursion seam — when, and then how, additional leash apparatus is built
 
 CLAUDE.md says: *"the leash also carries the capacity to produce more leashes (and other harness extensions: new skills, new slash commands, new hooks) for sibling harness surfaces, each new leash bedrock-conforming and ladder-disciplined by the same rules."*
 
-This document describes the seam concretely. The skeleton of `leash_for_hooks` is parameterized by **surface** (which Claude Code harness surface the leash constrains). Producing a sibling leash is a structural copy-and-substitute that touches a small, declared set of seams; everything in [lib/](lib/) is shared verbatim across siblings.
+The skeleton of `leash_for_hooks` is parameterized by **surface** (which Claude Code harness surface the leash constrains), so the *how* of producing a sibling is mechanical: a structural copy-and-substitute that touches a small, declared set of seams, with everything in [lib/](lib/) shared verbatim. The mechanical steps are documented later in this file.
+
+The *when* is upstream of that and is the more important question: under what conditions should a sibling leash (or any new harness apparatus) be built at all? The next section answers it. The mechanical steps only run after a signal motivating them has fired.
+
+## When the seam fires (the operator-side gate)
+
+The recursion seam is **0.2-shaped, not 0.3-shaped** — it is a signal whose verdict the operator consults, not an orchestration that emits new leashes. The default is **no growth**: apparatus is added (or retrained, or repaired, or replaced) only when the existing apparatus's own measurements indicate it is no longer sufficient for what the operator is asking of it.
+
+This is the same principle as CLAUDE.md's *"0.4 is driven by 0.2, not by request,"* extended one level up. The bedrock decides whether a 0.4 emission is permitted from inside a leash; the same logic applies to whether *the existence of a new leash* is permitted from outside one. The signal informs; the operator decides; the system never silently produces additional apparatus.
+
+Five outcomes the operator can take when consulting the signals from existing leashes. Each corresponds to a different shape of gap-record from the existing leash — or, in the last case, from the operator's session history.
+
+**1. Leave alone (default).** The leash's emission gate fires `ready` when it should; gap_records are sparse; `verify.py` exits clean; the source the collectors walk is fresh. No action. Most of the time this is the correct outcome. Silence from signals is not stalled growth — it is the bedrock saying nothing needs to change.
+
+**2. Retrain (existing leash, wider corpus).** The structural shape is correct but the dataset is too thin or stale.
+- *Gap-record:* repeated `not_ready` from `emission_readiness` with the same `shortfall_per_kind` over many runs, or persistent `insufficient_training_exemplars` with no new promotions arriving.
+- *Action:* grow the corpus the existing collectors walk (more user-authored hooks, more exemplars promoted), then re-run. No new files; no new leash.
+
+**3. Repair (specific 0.1 collector or 0.2 signal).** A component is drifting against the source it tracks.
+- *Gap-record:* a collector's `verify()` returning `dangling` on a high fraction of previously-emitted data points (the source moved under it); a signal's probe set still passing but its real-world verdicts contradicting accumulated operator approvals; an audit-budget violation newly appearing.
+- *Action:* fix the specific component. The leash itself remains.
+
+**4. Replace (the leash is the wrong shape for its surface).** The surface has shifted, or the original shape was a misfit.
+- *Gap-record:* persistent `rejected` / `unleashed` at high rates with no obvious operator misuse; multiple distinct `gap_record.reason` values accumulating across runs; the surface taxonomy has changed enough that the dataset-membership decision no longer maps cleanly.
+- *Action:* the existing leash informs the new one — its data, its 0.2 fits, its accumulated gap_records become inputs to the new leash's design — but is otherwise discarded. This is the upgrade path.
+
+**5. Build new alongside (a different surface).** The signal is not from inside any existing leash; it is a meta-signal across the operator's hand-walked work.
+- *Gap-record:* the operator is repeatedly applying ladder discipline by hand to a surface no existing leash covers. Every time the same shape of ad-hoc verification gets re-derived, that recurrence is the signal that a new leash should formalize it.
+- *Action:* run the mechanical steps below for the new surface.
+
+The signal-source for outcomes 2–4 lives **inside** the existing leash (its own datasets, signals, and verify output). The signal-source for outcome 5 lives in the **operator's session history** — what gets done by hand repeatedly. Both are real signals; neither is a request alone. Until one of them fires, the seam stays closed and no new apparatus is produced.
 
 ## What is shared (verbatim across all sibling leashes)
 
@@ -66,7 +96,7 @@ For most surfaces, three decision points are enough. Add more if the surface has
 
 ### 5. `leash_state.json` (per-surface toggle file, same shape across siblings)
 
-Each sibling carries its own [leash_state.json](leash_state.json) at the skill root. The shape is identical across surfaces — `{state: "on"|"off"|"scoped", scoped_on_events?: [...]}` — and validated by the shared [lib/leash_state.py](lib/leash_state.py). The *file is per-surface* because the operator may want different toggles on different surfaces (e.g., leash-on for hooks, leash-off for slash commands once trusted). The validator and the toggle gate logic in `orchestrate.py` are shared verbatim across siblings; only the file's contents (and the surface-specific scoped event names) vary.
+Each sibling carries its own [leash_state.json](leash_state.json) at the skill root. The shape is identical across surfaces — `{state: "on"|"off"|"scoped", scoped_on_events?: [...]}` — and validated by the shared [lib/leash_state.py](lib/leash_state.py). The *file is per-surface* because the operator may want different toggles on different surfaces (e.g., leash-on for hooks, leash-off for slash commands once trusted). The validator is shared verbatim across siblings; the toggle gate call in `orchestrate.py` is near-verbatim — each leash passes `key=` to `ls.is_leashed()` to name its candidate's identity field (`"event"` for hooks, `"name"` for slash commands). Only that one argument and the file's contents (the surface-specific scoped event names) vary.
 
 ### 6. SKILL.md surface identifier (in body prose, not frontmatter)
 
@@ -105,6 +135,8 @@ CLAUDE.md says floor-growth is the metric: the per-round generative share should
 - Round 3 (sibling leash for MCP wirings): same again. By now the lift-to-shared refactor (step 4 above) has happened; siblings import from a shared `bedrock/` package; generative share is purely surface-specific shape and rules.
 
 If round 3's generative share is *not* meaningfully smaller than round 1's, the seam is wrong (or the foundations are too thin), and that itself is a 0.4 grading event on the foundations. *That* is what makes the floor-growth metric falsifiable.
+
+Floor-growth is a metric *given that signals are firing for new rounds*. If no signal fires (no surface is being hand-walked repeatedly, no gap-record is accumulating, no existing leash is drifting), there is no round N+1 and the metric is undefined for that period — not failed. Absence of recursion in the absence of a signal is the correct state of a healthy system. The metric falsifies only when a round happens *and* the per-round generative share fails to shrink.
 
 ## What this leash does NOT yet have (work for follow-on leashes or siblings)
 

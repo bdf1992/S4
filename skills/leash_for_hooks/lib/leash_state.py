@@ -50,14 +50,20 @@ def read(skill_root: Path) -> dict:
     return state
 
 
-def is_leashed(state: dict, candidate: dict) -> tuple[bool, str]:
-    """Given a validated state and a candidate, return (leashed, reason)."""
+def is_leashed(state: dict, candidate: dict, key: str = "event") -> tuple[bool, str]:
+    """Given a validated state and a candidate, return (leashed, reason).
+
+    `key` selects which candidate field is matched against scoped_on_events.
+    Defaults to "event" for the hooks leash; slash-commands and other leashes
+    pass key="name" (or whatever their candidate's identity field is). See
+    debts/D-005.json for the bug this parameter exists to close.
+    """
     s = state["state"]
     if s == "on":
         return True, "state_on"
     if s == "off":
         return False, "state_off"
-    event = candidate.get("event")
-    if event in state.get("scoped_on_events", []):
-        return True, f"scoped_on_event:{event}"
-    return False, f"scoped_off_event:{event}"
+    value = candidate.get(key)
+    if value in state.get("scoped_on_events", []):
+        return True, f"scoped_on_{key}:{value}"
+    return False, f"scoped_off_{key}:{value}"
