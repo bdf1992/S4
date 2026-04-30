@@ -8,13 +8,11 @@ The orchestration log every leash and audit emits — `skills/*/outputs/run-*/or
 
 ## What's here
 
-- [collectors/orchestration_activations.py](collectors/orchestration_activations.py) — Foundation-2 collector. Walks every run's orchestration-log.jsonl, attaches the run's manifest claim as run-level context, emits one `orchestration_activation` data point per logged consultation. Run via `python -m skills.orchestration_audit.collectors.orchestration_activations`.
-- [datasets/orchestration_activations.jsonl](datasets/orchestration_activations.jsonl) — collector output. Regenerable; not authoritative.
+- [collectors/orchestration_activations.py](collectors/orchestration_activations.py) — **Prereq A.** Walks every run's orchestration-log.jsonl, attaches the run's manifest claim as run-level context, emits one `orchestration_activation` data point per logged consultation. Run via `python -m skills.orchestration_audit.collectors.orchestration_activations`.
+- [collectors/decision_point_honesty.py](collectors/decision_point_honesty.py) — **Prereq B.** For each `(skill_id, decision_id, fence_id)` tuple seen in the activations corpus, measures: where the literals appear in `skills/{skill_id}/**/*.py`, branch and verdict diversity observed across runs, and which branches were taken under which verdicts. Reports measurements only; honesty classification belongs to a downstream signal. Run via `python -m skills.orchestration_audit.collectors.decision_point_honesty`.
+- [datasets/orchestration_activations.jsonl](datasets/orchestration_activations.jsonl), [datasets/decision_point_honesty.jsonl](datasets/decision_point_honesty.jsonl) — collector outputs. Regenerable; not authoritative; gitignored.
 - [lib/data_point.py](lib/data_point.py) — local Foundation-1 wrapper (per-consumer copy; see debt D-001).
 
 ## What's *not* here yet (deferred)
 
-- **Honesty auditor** (Prereq B). A second collector that walks 0.3 source plus its log and verifies every `decision_id` corresponds to a real branch on the fence's verdict. Output: per-decision-point honesty data points.
-- **Trace-conformity 0.2 model.** A gradient-driven graph of state-based machines fit to logged trajectories, predicting whether a given run's activation sequence matches the shape of past runs that emitted at the desired claim level.
-
-The 0.2 model design doc is held until both prereqs are in place; design before floor would be speculative.
+- **Trace-conformity 0.2 model.** A gradient-driven graph of state-based machines fit to logged trajectories, predicting whether a given run's activation sequence matches the shape of past runs that emitted at the desired claim level. With both prereqs in place the 0.2 design doc earns its weight: it can name actual features the corpus contains, and the honesty measurements will weight which activations should count toward the trajectory match.
