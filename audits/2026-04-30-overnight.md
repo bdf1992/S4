@@ -132,3 +132,4 @@ Lightweight per-iteration trail confirming the loop fired, observed no state cha
 - iter 5 · 03:08 local · HEAD `bd5afef` · still blocked; upstream dataset mtime unchanged; no-op
 - iter 6 · 04:10 local · HEAD `173e9e0` · still blocked; upstream dataset mtime unchanged; no-op
 - iter 7 · 05:11 local · HEAD `4c7446b` · still blocked; upstream dataset mtime unchanged; no-op
+- iter 8 · 06:13 local · HEAD `820fb44` · still blocked; upstream dataset mtime unchanged; no-op
