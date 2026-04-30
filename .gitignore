@@ -11,6 +11,7 @@ skills/leash_for_hooks/exemplars/proposed/
 skills/leash_for_slash_commands/datasets/
 skills/leash_for_slash_commands/outputs/
 skills/leash_for_slash_commands/exemplars/proposed/
+skills/orchestration_audit/datasets/
 
 # Foundations are hardcoded after move 1; this is just python hygiene
 __pycache__/
