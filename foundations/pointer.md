@@ -2,6 +2,12 @@
 
 **Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 0.4 grading event and must be logged explicitly, not silently revised.
 
+---
+
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap that the bedrock spec files were synthesized rather than anchored against published standards. Pointer-shape was not itemized in the Event 001 affected-foundations table (no equivalent published spec was identified for the cross-rung-pointer abstraction), but the broader un-grounding disclosure applies. The event was **rejected** per operator decision and the bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+---
+
 ## What a pointer is
 
 A pointer is the only legitimate way for one rung to refer to another rung's artifacts. Whenever a 0.1 collector cites the source it walked, a 0.2 dataset row records its origin, a 0.3 plan step justifies a decision, or a 0.4 bundle reports its dependencies — the reference is a pointer, computed at use-time, not a sentence.

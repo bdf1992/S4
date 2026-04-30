@@ -2,6 +2,12 @@
 
 **Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 0.4 grading event and must be logged explicitly, not silently revised.
 
+---
+
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (the bedrock spec files were synthesized rather than anchored against published standards such as W3C PROV-DM, JSON Schema 2020-12, or Pydantic v2) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 0.2 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+---
+
 ## What a data point is
 
 A data point is the atomic non-LLM unit of evidence in this experiment. Every claim made by any rung — a 0.1 contract assertion, a 0.2 model input, a 0.3 plan justification — bottoms out in one or more data points. If a claim cannot be resolved to data points, it is not evidence; it is prose.

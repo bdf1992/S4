@@ -2,6 +2,12 @@
 
 **Status:** hardcoded after Move 2 commit. Like the other three foundations, immutable for the rest of this experiment. Any change is itself a 0.4 grading event and must be logged explicitly.
 
+---
+
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (in particular the orchestration "audit budget ≤ 150 LOC" rule was authored, not anchored against McCabe cyclomatic complexity or Pylint/Ruff defaults) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 0.2 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+---
+
 This file uses only the vocabulary established in [data-point.md](data-point.md), [collection-program.md](collection-program.md), and [pointer.md](pointer.md). No new bedrock concepts are introduced; this file is the *composition rule* over the three foundations.
 
 ## What 0.4 is (positive definition)

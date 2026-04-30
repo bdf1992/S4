@@ -2,6 +2,12 @@
 
 **Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 0.4 grading event and must be logged explicitly, not silently revised.
 
+---
+
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (in particular the "audit budget ≤ 80 substantive lines" rule was authored, not anchored against McCabe cyclomatic complexity, NIST SP 500-235, or Pylint/Ruff/Radon defaults) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 0.2 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+---
+
 ## What a collection program is
 
 A collection program is a deterministic, auditable, no-LLM program whose only purpose is to walk a declared region of source and emit data points (Foundation 1). It is the only thing in this experiment that is allowed to *make* a data point. Nothing else can.

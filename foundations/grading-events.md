@@ -10,7 +10,7 @@ This file is itself **not a foundation** — it is the changelog *adjacent to* t
 
 ---
 
-## Event 001 — bedrock not anchored to external standards (PENDING)
+## Event 001 — bedrock not anchored to external standards (REJECTED 2026-04-29)
 
 **Detected:** 2026-04-29 during operator review of Move 3 output.
 
@@ -41,7 +41,7 @@ Two research agents were dispatched (claude-code-guide for Anthropic-published s
 
 The foundations are the bedrock everything leans on. Their shape is the load-bearing claim of the experiment. Changing them mid-experiment is exactly what CLAUDE.md says must be logged, not silently revised. The shape change is also non-trivial: every existing collector, dataset, and verify-pass would need to re-emit / re-derive against the new foundation shape. That work is real, and the operator should decide whether the grounding is worth the migration cost before the migration begins.
 
-**Status:** PENDING — no foundation file has been modified. This event is queued. The operator must approve before any of the proposed changes are made.
+**Status:** REJECTED 2026-04-29 — see Resolution below. The four foundation files were stamped with an un-grounding disclosure block in the same commit as this status change. No foundation shape was modified; the bedrock remains as authored.
 
 **Two execution branches (operator picks one):**
 
@@ -90,7 +90,7 @@ Either branch can be edited before execution. Common refinements:
 - "Plan A but do PROV only" — drops A.2, A.4, A.7; keep PROV + the existing audit.
 - "Plan A but use jsonschema instead of Pydantic" — A.2 emits raw JSON Schema dicts, A.3 validates with `jsonschema.validate`. Lighter dep weight; loses IDE typing.
 
-**Resolution:** *(not yet resolved — awaiting operator pick of Plan A / Plan B / refinement)*
+**Resolution (2026-04-29):** REJECTED per operator decision (Plan B). Rationale: the operator had already begun an in-flight sibling leash at `skills/leash_for_slash_commands/` in the same session. A 4–6h foundation grounding refactor (Plan A) would have frozen that sibling work mid-stream and forced re-validation of every collector against shifting bedrock, with no corresponding 0.2 signal indicating the grounding is operationally needed yet. Floor-growth across rounds — sibling leashes reusing shared bedrock — is the experiment's named success metric (per [CLAUDE.md](../CLAUDE.md)); deferring the grounding preserves momentum on that metric. Plan B was executed in a single commit: each of the four foundation files now carries an un-grounding disclosure block (after the `**Status:**` line, before the first content section) pointing back here. Re-trigger conditions are listed under Plan B above; revisit when one fires.
 
 ---
 
