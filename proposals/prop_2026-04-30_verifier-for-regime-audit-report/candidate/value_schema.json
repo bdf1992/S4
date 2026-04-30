@@ -1,0 +1,20 @@
+{
+  "kind": "bundle_self_check",
+  "type": "object",
+  "required": ["check_id", "verdict", "reason"],
+  "properties": {
+    "check_id": {
+      "type": "string",
+      "description": "Stable identifier for the structural check performed."
+    },
+    "verdict": {
+      "enum": ["pass", "fail"],
+      "description": "Binary outcome of the check at the recorded source_state."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Structured reason code. On pass: a short code describing what passed (e.g. 'exists', 'clean'). On fail: a code describing the failure mode (e.g. 'missing', 'banned_import:foo')."
+    }
+  },
+  "additionalProperties": false
+}

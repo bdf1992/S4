@@ -1,0 +1,17 @@
+{
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:756c48fe81d375a5"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:1bfd5aff1af964f178df3f860f7aeaca41d564d36b93d3f3bf831d453acedcc8",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "narrative": "skills/regime_audit_report has SKILL.md but no verify.py — it claims structure (a render contract: stats.json -> report.md) without a self-check that exits 0 iff the structure holds. The gap data point above is one of three emitted by skills/gap_audit/collectors/skill_without_verifier.py at source_state sha256:1bfd5aff... at iter 10."
+}

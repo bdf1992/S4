@@ -1,0 +1,80 @@
+{
+  "id": "regime_audit_report_verifier_pre_verification:b4e108ca796b8470",
+  "kind": "pre_verification_summary",
+  "provenance": {
+    "collected_at": "2026-04-30T13:22:49+00:00",
+    "collector": {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": null
+      },
+      "kind": "orchestration",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "orchestration_resolver",
+      "target": {
+        "orchestration_id": "iter_10_loop_drafting"
+      }
+    },
+    "source_state": "git:HEAD@iter_10_drafting"
+  },
+  "value": {
+    "candidate_path": "proposals/prop_2026-04-30_verifier-for-regime-audit-report/candidate/regime_audit_report_verifier.py",
+    "checks": {
+      "audit_budget_under_80": {
+        "budget": 80,
+        "substantive_lines": 80,
+        "verdict": "pass"
+      },
+      "candidate_runs_clean_against_target": {
+        "checks_passed": 5,
+        "checks_total": 5,
+        "verdict": "pass"
+      },
+      "determinism_runtime_check": {
+        "method": "Imported the candidate, called collect() twice with the same source_state, compared every record's id and witness across the two runs.",
+        "records_compared": 5,
+        "verdict": "pass"
+      },
+      "no_llm_sdk_imports": {
+        "all_imports": [
+          "__future__",
+          "ast",
+          "datetime",
+          "hashlib",
+          "json",
+          "pathlib",
+          "typing"
+        ],
+        "banned_matches": [],
+        "verdict": "pass"
+      },
+      "no_nondeterminism_imports": {
+        "banned_matches": [],
+        "note": "datetime IS imported but is only used for provenance.collected_at, which Foundation 1 designates advisory and not load-bearing for value/witness. Confirmed by source inspection: the only datetime call is _dt.datetime.now(...).isoformat(...) inside _make() and its result writes only to provenance.collected_at; value and witness derive solely from the json.dumps(value) hash.",
+        "verdict": "pass"
+      },
+      "required_constants_present": {
+        "found": [
+          "COLLECTOR_ID",
+          "INPUTS",
+          "KIND",
+          "VALUE_SCHEMA"
+        ],
+        "missing": [],
+        "verdict": "pass"
+      },
+      "required_functions_present": {
+        "found": [
+          "collect",
+          "verify"
+        ],
+        "missing": [],
+        "verdict": "pass"
+      }
+    },
+    "overall_verdict": "pass"
+  },
+  "witness": "b4e108ca796b8470"
+}

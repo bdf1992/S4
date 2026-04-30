@@ -1,0 +1,53 @@
+{
+  "proposal_id": "prop:2026-04-30:verifier-for-regime-audit-report",
+  "claimed_kind": "bundle_self_check",
+  "status": "proposed",
+  "proposed_at": {
+    "source_state": "git:143135bbe7e90278bec5dc0191e9ed1f319aa7c7"
+  },
+  "proposed_by": {
+    "kind": "orchestration",
+    "target": {"orchestration_id": "iter_10_overnight_loop"},
+    "resolver": "orchestration_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "candidate_pointer": {
+    "kind": "collector",
+    "target": {
+      "collector_id": "regime_audit_report_verifier",
+      "path": "proposals/prop_2026-04-30_verifier-for-regime-audit-report/candidate/regime_audit_report_verifier.py"
+    },
+    "resolver": "collector_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "gap_pointers": [
+    {
+      "kind": "data_point",
+      "target": {"data_point_id": "skill_without_verifier:756c48fe81d375a5"},
+      "resolver": "data_point_resolver",
+      "bound_at": {
+        "source_state": "sha256:1bfd5aff1af964f178df3f860f7aeaca41d564d36b93d3f3bf831d453acedcc8",
+        "resolved_at": null
+      },
+      "last_status": "unresolved",
+      "last_payload": null,
+      "last_reason": null
+    }
+  ],
+  "pre_verification_pointer": {
+    "kind": "data_point",
+    "target": {"data_point_id": "regime_audit_report_verifier_pre_verification:b4e108ca796b8470"},
+    "resolver": "data_point_resolver",
+    "bound_at": {"source_state": null, "resolved_at": null},
+    "last_status": "unresolved",
+    "last_payload": null,
+    "last_reason": null
+  },
+  "decision_record_pointer": null
+}
