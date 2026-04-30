@@ -298,3 +298,33 @@ Operator pushed back twice this iter:
 - **Possibly a fourth gap-collector** if more mechanically-detectable kinds emerge. Candidates in iter 12's queue still apply: `dataset_without_source_state`, `claim_with_broken_probe`.
 - **Promoter happy-path verification** — once any proposal promotes, re-run `skill_without_verifier.collect()` and confirm that gap drops out of the inventory. That's the floor-growth signal closing the loop end-to-end.
 - **Render regeneration as standing footer step** — every iteration that touches `proposals/*` regenerates `REVIEW.md` and `REVIEW.html` so they stay fresh.
+
+---
+
+## Iteration 14 — review surface insight + provenance polish
+
+State unchanged at iter start (operator hasn't promoted; no new gaps). Surveyed the queued candidates:
+- `dataset_without_source_state`: would emit 0 records (12/13 .jsonl files have sidecars; the one without is a sample/synthetic file). Real but low-value.
+- `claim_with_broken_probe`: would emit 5 records but they're informational like iter-13's collector_with_dangling_inputs (not new-collector-shaped fixes).
+
+Defensible call: skip both this iter; spend the cycle improving the review surface (operator's repeated feedback about insight density). One commit, focused.
+
+### Decisions taken (revertable)
+
+- **D-iter14-1 — Summary banner over fourth gap-collector.** Operator pressed twice on "no insight surfaces." Adding the summary banner answers the "what does this all add up to" question that the per-card view doesn't surface. Revert: delete `_summary_banner()` from render_proposals_html.py.
+- **D-iter14-2 — Skipped fourth gap-collector this iter.** Both candidates would yield zero floor-growth proposals (one because state is healthy, one because gaps are informational). Revert is implicit — iter 15+ can write either if useful state arrives.
+
+### Floor growth this iteration
+
+| Component | Commit | What it adds |
+| --- | --- | --- |
+| [tools/render_proposals_html.py](../tools/render_proposals_html.py) | `c68e0ea` | Summary banner (top of page, gradient): chips for total / proposed / promoted / rejected / pre-verifications-pass, plus the floor-growth narrative ("if all N pending promote, inventory drains by N — that round-over-round drain is the floor-growth signal CLAUDE.md names"). Provenance step 1 now shows the gap-collector source path. |
+
+### Approvals walk (step 1)
+
+`approvals/decisions.jsonl` still does not exist. No promotions. Standing footer: re-ran both renders this iter; HTML diff was the banner addition (intentional), markdown render unchanged.
+
+### What's queued for iter 15
+
+- Same as iter 14's queue, plus: end-to-end happy-path test of the promoter once any operator decision lands. The system is otherwise idle in a healthy way — no measurable defect to fix, no mechanically-detectable gap that would warrant a new proposal.
+- If operator stays away for several more iterations, iterations should taper to heartbeat-only rather than invent work. The "every iteration must produce a commit" anti-pattern is itself a failure mode.
