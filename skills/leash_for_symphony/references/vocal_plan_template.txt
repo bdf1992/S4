@@ -1,0 +1,48 @@
+# Vocal-mode capture plan — run {run_id}
+
+This plan was emitted because `leash_state.json` for leash-for-symphony
+declares `{{"state": "off", "vocal": true}}`. The leash did not gate
+this candidate (state=off; the surface is autonomous), but vocal=true
+requires the bundle to capture every choice the autonomous Symphony
+run will make so the operator can grade it after the fact.
+
+## Wire `hooks.after_run` into the candidate WORKFLOW.md
+
+When formatting `candidate.json` back into a `WORKFLOW.md` file for
+shipping to a Symphony runtime, add the following under `hooks:`:
+
+```yaml
+hooks:
+  after_run: |
+    # Pipe Symphony's per-run structured event log into this leash's
+    # outputs directory so verify.py can grade it. Symphony emits the
+    # event stream during turn execution; the reference and cc-symphony
+    # implementations both write a per-thread JSONL file under the
+    # workspace. Replace <SYMPHONY_EVENT_LOG_PATH> with the path your
+    # runtime uses (Symphony SPEC §10.4 enumerates event types).
+    cp <SYMPHONY_EVENT_LOG_PATH> {events_target}
+  timeout_ms: 60000
+```
+
+## Grading the captured stream
+
+After Symphony finishes, run:
+
+```bash
+python -m skills.leash_for_symphony.verify outputs/{run_id}
+```
+
+verify.py walks the captured `symphony-events.jsonl` (if present) and
+adds per-event self-checks against the bundle's manifest. A vocal-mode
+bundle that has no captured events is a `dangling` vocal-capture (the
+runtime never wrote, or the after_run hook failed) — verify.py reports
+this as a self-check failure so the operator notices.
+
+## Why this is conformant
+
+Symphony SPEC §10.5 requires every implementation to document its
+chosen approval, sandbox, and operator-confirmation posture. Filling
+that slot with state=off (autonomous) + vocal=true (loud capture) is
+conformant adapter behavior — the operator has trust-established the
+surface but wants every action observable. See
+proposals/prop_2026-04-30_leash-for-symphony/README.md for context.
