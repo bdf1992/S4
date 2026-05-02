@@ -176,10 +176,21 @@ def _proposal_card(proposal: dict, decision: dict | None) -> dict:
     gap_count = len(proposal.get("gap_pointers", []) or [])
     factory_kind = _infer_factory_kind(pid)
     subject = _proposal_subject(proposal)
+    manifest_status = proposal.get("status")
+    install_drift = False
     if decision:
         verdict = decision.get("verdict")
-        column = "promoted" if verdict == "promote" else "rejected"
         last_updated = decision.get("decided_at")
+        if verdict == "reject":
+            column = "rejected"
+        elif verdict == "promote":
+            if manifest_status == "promoted":
+                column = "promoted"
+            else:
+                column = "proposed"
+                install_drift = True
+        else:
+            column = "proposed"
     else:
         column = "proposed"
         last_updated = None
@@ -189,7 +200,12 @@ def _proposal_card(proposal: dict, decision: dict | None) -> dict:
         lane = "cosmetic"
     else:
         lane = "unknown"
-    if column == "proposed":
+    if install_drift:
+        lane = "load_bearing"
+        payoff = (f"DRIFT: promote decision recorded but install never ran. "
+                  f"manifest.status={manifest_status!r}; expected 'promoted'. "
+                  f"run `python -m tools.promote {pid}` to consummate.")
+    elif column == "proposed":
         payoff = (f"if approved: {factory_kind} gets built, addressing {gap_count} gap"
                   f"{'s' if gap_count != 1 else ''}. if rejected: gaps remain unaddressed.")
     elif column == "promoted":
@@ -202,6 +218,9 @@ def _proposal_card(proposal: dict, decision: dict | None) -> dict:
         "source_pointer": proposal.get("_source_path", ""),
         "payoff": payoff,
     }
+    if install_drift:
+        payload["install_drift"] = True
+        payload["manifest_status"] = manifest_status
     dp_summary = _decision_pointer_summary(decision) if decision else None
     if dp_summary:
         payload["decision_pointer"] = dp_summary
