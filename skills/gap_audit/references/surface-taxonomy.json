@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "comment": "Closed enumeration of CC-known surfaces, the synonym tokens that signal each surface is a handwalk subject, the ladder vocabulary that signals a file is applying ladder discipline, and the path-prefix/file exclusions that keep the formal-leash artifacts and auto-generated renders out of the corpus walk. Order is fixed; new surfaces are appended, never reordered. Mutations to this file change source_state for surface_handwalk_recurrence and force re-collection.",
+  "surfaces": [
+    {
+      "id": "hooks",
+      "leash_dir": "leash_for_hooks",
+      "synonyms": ["settings.json hooks", "hook_config", "pretooluse", "posttooluse", "leash_for_hooks"]
+    },
+    {
+      "id": "slash_commands",
+      "leash_dir": "leash_for_slash_commands",
+      "synonyms": [".claude/commands", "slash_command", "leash_for_slash_commands"]
+    },
+    {
+      "id": "symphony",
+      "leash_dir": "leash_for_symphony",
+      "synonyms": ["symphony", "workflow.md", "cc-symphony", "leash_for_symphony"]
+    },
+    {
+      "id": "mcp_wirings",
+      "leash_dir": "leash_for_mcp_wirings",
+      "synonyms": ["mcp wiring", "mcp_wiring", "stdio transport", "sse transport"]
+    },
+    {
+      "id": "agent_definitions",
+      "leash_dir": "leash_for_agent_definitions",
+      "synonyms": [".claude/agents", "agent definition", "agents/*.md"]
+    },
+    {
+      "id": "claude_md_sections",
+      "leash_dir": "leash_for_claude_md_sections",
+      "synonyms": ["claude.md section", "claude_md_section", "section taxonomy"]
+    },
+    {
+      "id": "cc_afk_runtime",
+      "leash_dir": "leash_for_cc_afk",
+      "synonyms": ["auto/afk", "afk-plan", "afk session", "leash_for_cc_afk", "afk mode"]
+    },
+    {
+      "id": "meeting_notes",
+      "leash_dir": "leash_for_meeting_notes",
+      "synonyms": ["leash_for_meeting_notes", "leash for meeting-notes", "leash for the meeting-notes", "meeting-notes surface", "meeting_notes surface", "meeting-notes/ directory becomes a claude code surface"]
+    }
+  ],
+  "ladder_tokens": [
+    "0.1", "0.2", "0.3", "0.4",
+    "leash", "decision_point", "decision points", "verify.py",
+    "collector", "signal", "foundation", "data point", "data_point",
+    "source_state", "emission_readiness", "recursion-seam", "recursion_seam"
+  ],
+  "excluded_path_prefixes": [
+    "skills/leash_for_hooks/",
+    "skills/leash_for_slash_commands/",
+    "skills/leash_for_symphony/"
+  ],
+  "excluded_files": [
+    "proposals/REVIEW.md"
+  ]
+}
