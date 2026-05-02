@@ -1,16 +1,18 @@
 # Foundation 1 — Data-point shape
 
-**Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 0.4 grading event and must be logged explicitly, not silently revised.
+**Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 4.0 grading event and must be logged explicitly, not silently revised.
 
 ---
 
-> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (the bedrock spec files were synthesized rather than anchored against published standards such as W3C PROV-DM, JSON Schema 2020-12, or Pydantic v2) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 0.2 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (the bedrock spec files were synthesized rather than anchored against published standards such as W3C PROV-DM, JSON Schema 2020-12, or Pydantic v2) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 2.0 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+> **Vocabulary-lift disclosure (Event 002 in progress, 2026-05-01).** This file was lifted to the two-axis programs-vs-protocols framing established in CLAUDE.md (programs are X.0 — 1.0/2.0/3.0/4.0; protocols are 0.X — 0.1/0.2/0.3/0.4; 0.0 is the candidate state). **The shape, guarantees, and validations are unchanged.** Only the language is updated. See [grading-events.md Event 002](grading-events.md) for the lift event log.
 
 ---
 
 ## What a data point is
 
-A data point is the atomic non-LLM unit of evidence in this experiment. Every claim made by any rung — a 0.1 contract assertion, a 0.2 model input, a 0.3 plan justification — bottoms out in one or more data points. If a claim cannot be resolved to data points, it is not evidence; it is prose.
+A data point is the atomic non-LLM unit of evidence in this experiment. Every claim made anywhere in the chain — a 1.0 collector's value, a 2.0 signal's training input, a 3.0 plan's justification — bottoms out in one or more data points. If a claim cannot be resolved to data points, it is not evidence; it is prose.
 
 A data point is not authored. It is *computed*, by a collection program (Foundation 2), against real source state, and its identity is fixed by what that program saw.
 
@@ -60,9 +62,9 @@ Detection of any of these MUST result in the data point being rejected — never
 ## What a data point is not
 
 - Not a citation. A citation is a sentence in a markdown file that names a source. A data point is a structured record produced by a program. Citations rot; data points either re-derive identically or are rejected.
-- Not a confidence claim. A data point has no `confidence` field. Confidence belongs to 0.2 signals, not to 0.1 measurements.
-- Not a model output. A 0.2 model's prediction is not a data point. The dataset row that fed into training the model is a data point, and the model's prediction-vs-target comparison can be turned into data points by a collector, but the prediction itself is not.
-- Not a snapshot of LLM output. If a 0.3 process generates text, that text is not a data point. A 0.1 collector walking that text and computing structured measurements over it can produce data points; the prose itself cannot.
+- Not a confidence claim. A data point has no `confidence` field. Confidence belongs to 2.0 signals (under 0.2 protocol), not to 1.0 measurements (under 0.1 protocol).
+- Not a model output. A 2.0 model's prediction is not a data point. The dataset row that fed into training the model is a data point, and the model's prediction-vs-target comparison can be turned into data points by a 1.0 collector, but the prediction itself is not.
+- Not a snapshot of LLM output. If a 3.0 process generates text, that text is not a data point. A 1.0 collector walking that text and computing structured measurements over it can produce data points; the prose itself cannot.
 
 ## Why this shape
 
@@ -74,4 +76,4 @@ Each field exists to close a specific class of hallucination:
 - `provenance.source_state` closes *unanchored measurement* — every value names what it measured.
 - The no-LLM guarantee closes *circular grading* — the bedrock cannot be a model's output, because a model's output is what we are trying to fence.
 
-Holding all of these at once is what makes the bottom of the ladder un-second-guessable. A higher rung that depends on a data point depends on something that can be re-derived from public source by anyone, with no model in the loop.
+Holding all of these at once is what makes the floor un-second-guessable. A program at any layer of the chain that depends on a data point depends on something that can be re-derived from public source by anyone, with no model in the loop.

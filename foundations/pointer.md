@@ -1,20 +1,22 @@
 # Foundation 3 — Pointer shape
 
-**Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 0.4 grading event and must be logged explicitly, not silently revised.
+**Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 4.0 grading event and must be logged explicitly, not silently revised.
 
 ---
 
-> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap that the bedrock spec files were synthesized rather than anchored against published standards. Pointer-shape was not itemized in the Event 001 affected-foundations table (no equivalent published spec was identified for the cross-rung-pointer abstraction), but the broader un-grounding disclosure applies. The event was **rejected** per operator decision and the bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap that the bedrock spec files were synthesized rather than anchored against published standards. Pointer-shape was not itemized in the Event 001 affected-foundations table (no equivalent published spec was identified for the cross-layer-pointer abstraction), but the broader un-grounding disclosure applies. The event was **rejected** per operator decision and the bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+> **Vocabulary-lift disclosure (Event 002 in progress, 2026-05-01).** This file was lifted to the two-axis programs-vs-protocols framing established in CLAUDE.md (programs are X.0 — 1.0/2.0/3.0/4.0; protocols are 0.X — 0.1/0.2/0.3/0.4; 0.0 is the candidate state). **The shape, guarantees, and validations are unchanged.** Only the language is updated. See [grading-events.md Event 002](grading-events.md) for the lift event log.
 
 ---
 
 ## What a pointer is
 
-A pointer is the only legitimate way for one rung to refer to another rung's artifacts. Whenever a 0.1 collector cites the source it walked, a 0.2 dataset row records its origin, a 0.3 plan step justifies a decision, or a 0.4 bundle reports its dependencies — the reference is a pointer, computed at use-time, not a sentence.
+A pointer is the only legitimate way for one program in the chain to refer to another's artifacts. Whenever a 1.0 collector cites the source it walked, a 2.0 signal records its training data, a 3.0 plan step justifies a decision, or a 4.0 bundle reports its dependencies — the reference is a pointer, computed at use-time, not a sentence.
 
 A pointer is not a citation. A citation is prose that names a target. A pointer is a structured record that *resolves* against current state and reports `live` or `dangling` deterministically. Citations rot silently; pointers fail loudly.
 
-A pointer is the load-bearing primitive that makes the running-order rule from CLAUDE.md mean anything. Mutual support between rungs requires that each rung can ask "are the things I depend on still there?" and get a real answer. Pointers are how that question is asked.
+A pointer is the load-bearing primitive that makes the running-order rule from CLAUDE.md mean anything. Mutual support across the chain requires that each layer can ask "are the things I depend on still there?" and get a real answer. Pointers are how that question is asked.
 
 ## Shape
 
@@ -31,12 +33,12 @@ A pointer is a record with exactly these fields. A record missing any field, or 
 | `last_payload` | typed-by-kind \| null | yes | On `live`: the payload the resolver returned (e.g. for `file_line`, the line's content; for `data_point`, the data-point record). On `dangling` or `unresolved`: `null`. |
 | `last_reason` | string \| null | yes | On `dangling`: a structured reason code emitted by the resolver (e.g. `path_missing`, `line_out_of_range`, `symbol_renamed`, `source_state_unknown`, `schema_mismatch`). On `live` or `unresolved`: `null`. |
 
-There is no free-text description, no human comment, no "intent" field. If a 0.3 process wants to record *why* it created the pointer, it does so in its own log, not inside the pointer.
+There is no free-text description, no human comment, no "intent" field. If a 3.0 process wants to record *why* it created the pointer, it does so in its own log, not inside the pointer.
 
 ## Guarantees a valid pointer provides
 
-1. **Deterministic resolution.** The resolver is a Foundation-2 collector. Given the pointer and a source_state, the resolver returns the same `(status, payload, reason)` every time. No model in the loop.
-2. **Binary status.** Resolution is `live` or `dangling`. There is no "probably live", no "stale but maybe still right", no confidence score. (Confidence is a 0.2 concern; resolution is 0.1.)
+1. **Deterministic resolution.** The resolver is a Foundation-2 collector (a 1.0 program under 0.1 protocol). Given the pointer and a source_state, the resolver returns the same `(status, payload, reason)` every time. No model in the loop.
+2. **Binary status.** Resolution is `live` or `dangling`. There is no "probably live", no "stale but maybe still right", no confidence score. (Confidence is a 2.0 concern under 0.2 protocol; resolution is a 1.0 concern under 0.1.)
 3. **Structural target.** `target` parses against its `kind`'s declared format. A reader can extract every component (path, line, symbol, id) without natural-language parsing.
 4. **No silent freshness.** `last_status` is meaningful only at the recorded `bound_at.source_state`. A consumer treating it as live without checking the source_state is misusing the pointer; the pointer itself never claims more than it knows.
 5. **Append-only history at use-time.** Resolving a pointer at a new source_state produces a new pointer record (or, equivalently, a new resolution event for the same logical target). The previous pointer's fields are not mutated. This makes pointer behavior over time itself an inspectable trace, not a mystery.
@@ -71,16 +73,16 @@ A pointer that fails any check is not used. Whatever depended on it is now unsup
 ## Live vs dangling vs unresolved
 
 - **live** — the most recent resolution at the recorded `bound_at.source_state` returned `("live", payload)`. The pointer is good *for that source_state*. Whether it remains good at a newer source_state is unknown until re-resolved.
-- **dangling** — the most recent resolution returned `("dangling", reason)`. The pointer is broken at the recorded source_state. A higher rung that depended on this pointer must either accept the breakage and invalidate, or re-author the target and re-resolve.
+- **dangling** — the most recent resolution returned `("dangling", reason)`. The pointer is broken at the recorded source_state. A higher layer that depended on this pointer must either accept the breakage and invalidate, or re-author the target and re-resolve.
 - **unresolved** — the pointer record exists but has not yet been resolved. This is a transient state during construction; a pointer that stays `unresolved` is a bug in whatever built it.
 
-Note the asymmetry: `live` is a claim about a *past* source_state; it does not claim freshness against the *current* source_state. Higher rungs that need current-source guarantees must re-resolve at use-time, not trust an older `live`. The default behavior of any 0.3 process that consumes a pointer is to re-resolve before relying on it; trusting a stale `live` is a higher-rung discipline failure, not a pointer-shape failure.
+Note the asymmetry: `live` is a claim about a *past* source_state; it does not claim freshness against the *current* source_state. Higher layers that need current-source guarantees must re-resolve at use-time, not trust an older `live`. The default behavior of any 3.0 process that consumes a pointer is to re-resolve before relying on it; trusting a stale `live` is a higher-layer discipline failure, not a pointer-shape failure.
 
 ## What a pointer is not
 
 - Not a citation. A markdown sentence like "see `foo.py:42` for the implementation" is a citation. It can become a pointer only by being produced as a structured record from a resolver call against current source.
 - Not a hyperlink. A clickable link in a doc is a navigation aid. It has no resolver, no live/dangling status, no source_state binding. It can rot silently. Useful for humans, useless as bedrock.
-- Not a foreign key. A foreign key in a database refers within a closed schema. A pointer refers across rungs and across source generations; its resolver, not a referential-integrity constraint, is what makes it work.
+- Not a foreign key. A foreign key in a database refers within a closed schema. A pointer refers across layers of the chain and across source generations; its resolver, not a referential-integrity constraint, is what makes it work.
 - Not free-form. There is no `notes`, no `description`, no `intent`. A pointer says exactly what it points at and what happened when it was resolved. If something else needs saying, a different record kind says it.
 
 ## Why this shape
@@ -91,6 +93,6 @@ Each constraint exists to close a specific failure mode:
 - Binary status closes *fuzzy referencing*. "Probably still there" is exactly the kind of claim that lets the bedrock erode. Either the resolver finds the target or it doesn't.
 - Single-resolver-per-kind closes *resolver drift*. If two programs both claim to resolve `file_line` pointers, they will eventually disagree, and there will be no fact of the matter. One resolver per kind keeps resolution well-defined.
 - Append-only resolution history closes *silent change*. A pointer that flips `live` → `dangling` over time leaves a trace; a reader can see when it happened and why.
-- The mandatory `last_reason` enum closes *vague breakage*. A dangling pointer says exactly why it dangles, and the set of reasons is closed (declared by the resolver), so the next rung up can branch on the reason without parsing prose.
+- The mandatory `last_reason` enum closes *vague breakage*. A dangling pointer says exactly why it dangles, and the set of reasons is closed (declared by the resolver), so the next layer up can branch on the reason without parsing prose.
 
-Holding all of these at once is what makes mutual pointing between rungs (the running-order rule from CLAUDE.md) actually work. Without these, "rung A points at rung B" is just a sentence; with these, it is a runnable fact.
+Holding all of these at once is what makes mutual pointing across the chain (the running-order rule from CLAUDE.md) actually work. Without these, "layer A points at layer B" is just a sentence; with these, it is a runnable fact.

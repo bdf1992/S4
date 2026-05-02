@@ -98,6 +98,59 @@ Either branch can be edited before execution. Common refinements:
 
 ---
 
+## Event 002 — vocabulary lift to two-axis (programs vs protocols) framing (IN PROGRESS 2026-05-01)
+
+**Detected:** 2026-05-01 during operator-driven CLAUDE.md vocabulary clarification session.
+
+**Trigger:** Operator surfaced that the work to date had been confused between *what we are making* (X.0 programs) and *the discipline by which we make them* (0.X protocols), and clarified the two-axis split:
+
+- **Programs (X.0)** — 1.0 handwritten code, 2.0 learned models, 3.0 prompted agents, 4.0 coupled-system. The program kinds Karpathy named, plus the one this experiment is producing.
+- **Protocols (0.X)** — 0.1 the discipline for 1.0, 0.2 for 2.0, 0.3 for 3.0, 0.4 the shared protocol for 4.0.
+- **0.0** — the candidate state of any X.0 program before its 0.X protocol has graduated it.
+
+CLAUDE.md was updated under direct operator authorization in the same session. The operator then explicitly directed lifting this framing throughout the rest of the repo, including the foundations.
+
+**Investigation:** The pre-lift wording across the four foundations conflated programs with protocols:
+
+- **data-point.md** — uses "rung" loosely to mean "layer in the chain"; "0.1 contract assertion / 0.2 model input / 0.3 plan justification" naming conflates protocol with the program produced under it.
+- **collection-program.md** — references "0.2 datasets" (should be: 2.0 signals trained on 1.0-computed datasets, all under 0.2 protocol); uses "ladder collapse" framing.
+- **pointer.md** — uses "rung" / "ladder" / "0.X plan step" throughout; pointer kinds like `data_point` / `collector` / `signal` map cleanly to the new framing without rename.
+- **zero-four.md** — most affected. Names the bundle a "0.4 bundle" (should be: 4.0 bundle); names components "0.1 layer / 0.2 layer / 0.3 layer" (should be: 1.0 / 2.0 / 3.0 components produced under their protocols); inter-layer rules titled "0.0 → 0.1", "0.1 → 0.2", etc., where the right read is "candidate-X.0 → graduated-X.0 via 0.X protocol".
+- **proposal.md** — describes a proposal as a "candidate 0.1 asset" (should be: candidate-1.0 collector, i.e. a 0.0-stage applicant for the 1.0 floor under 0.1 protocol).
+
+**Proposed change:** Vocabulary lift across all foundation files. **Substantive shapes are unchanged**: the data-point record fields, the collector validity constraints, the pointer protocol, the 4.0 bundle composition rule, the proposal contract — all unchanged at the shape/guarantee/validation level. Only the language is updated to use the two-axis framing established in [CLAUDE.md](../CLAUDE.md). No re-derivation of any data point, collector, dataset, or signal is required by this change.
+
+**Why this is a 4.0 grading event:** Even though the lift is renaming-only and the shapes are preserved, the bedrock rule per CLAUDE.md is that *any* change to a foundation must be logged, not silently revised. The four foundation `.md` files ARE the bedrock; their text is load-bearing. Logging Event 002 here makes the change traceable instead of silent.
+
+**Status:** IN PROGRESS — applied 2026-05-01 in the same commit cycle as the CLAUDE.md update, by direct operator authorization.
+
+**Resolution:** Pending — commit SHAs to be recorded once lift is applied. Re-affirms Event 001's rejection: the un-grounding disclosure blocks remain in place; this lift does not anchor the bedrock to external standards (PROV-DM, JSON Schema, McCabe complexity) — it only renames within the existing un-grounded shape.
+
+---
+
+## Event 003 — independent validation and non-blocking production (IN PROGRESS 2026-05-02)
+
+**Detected:** 2026-05-02 during operator correction of the running protocol.
+
+**Trigger:** Operator clarified that the repo should not block useful work on repeated validation of lower layers:
+
+> "I want to validate 0.4 and 4.0 ... I don't need to validate 0.1 and 0.2 as long as there are files validating them ... I only need to validate what is produced ... I want to edit this repo to act in such a way that I do not block work."
+
+**Investigation:** The current text already allowed `not_ready` emission-readiness to produce a `candidate` instead of failing, but CLAUDE.md still said to stop after early move checkpoints and zero-four.md described inline re-validation of collectors, datasets, and signals inside every bundle walk. That made lower-layer proof work act like a synchronous gate instead of an independent proof surface.
+
+**Proposed changes:**
+
+1. **CLAUDE.md** — add an explicit validation-scope rule: once 0.1/0.2 validator or receipt files exist, later work may point at them and continue; blocking validation belongs to the produced 0.3/3.0 artifact and final 0.4/4.0 bundle claim.
+2. **CLAUDE.md** — rewrite "Stop and report" as "report validation state and continue with the next non-destructive work item" except for destructive operations, unlogged foundation mutation, or explicit operator decisions.
+3. **zero-four.md** — update the grading procedure so the 0.4 walker consumes lower-layer validation receipts, refreshes them only when absent or stale, and downgrades to `candidate` when a dependent receipt is missing/stale instead of blocking unrelated production.
+4. **zero-four.md** — update negative definitions and the 3.0 -> 4.0 gate to distinguish "cannot claim 4.0 yet" from "must stop work."
+
+**Status:** IN PROGRESS — applied 2026-05-02 by direct operator authorization.
+
+**Resolution:** Pending — commit SHAs to be recorded once this change set is committed. The intended behavior after this event is: produce the work, preserve validation receipts for lower layers, and let the final walker assign the strongest honest claim (`candidate` or `4.0`) without freezing unrelated substrate growth.
+
+---
+
 ## Event template
 
 For future events, copy this skeleton:

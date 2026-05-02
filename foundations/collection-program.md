@@ -1,10 +1,14 @@
 # Foundation 2 — Collection-program shape
 
-**Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 0.4 grading event and must be logged explicitly, not silently revised.
+**Status:** hardcoded after Move 1 commit. Immutable for the rest of this experiment. Any change to this file is itself a 4.0 grading event and must be logged explicitly, not silently revised.
+
+This is the foundation the **0.1 protocol** rests on: the shape any candidate-1.0 must take to be graduated into a real 1.0 collector.
 
 ---
 
-> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (in particular the "audit budget ≤ 80 substantive lines" rule was authored, not anchored against McCabe cyclomatic complexity, NIST SP 500-235, or Pylint/Ruff/Radon defaults) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 0.2 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+> **Un-grounding disclosure (Event 001 rejected, 2026-04-29).** This foundation is hardcoded from [CLAUDE.md](../CLAUDE.md) without external-standard citation. Event 001 documented the gap (in particular the "audit budget ≤ 80 substantive lines" rule was authored, not anchored against McCabe cyclomatic complexity, NIST SP 500-235, or Pylint/Ruff/Radon defaults) and was **rejected** per operator decision: the 4–6h migration would have frozen in-flight sibling-leash work without a corresponding 2.0 signal that the grounding is needed yet. The bedrock remains as authored. See [grading-events.md Event 001](grading-events.md) for the rejected proposal and re-trigger conditions.
+
+> **Vocabulary-lift disclosure (Event 002 in progress, 2026-05-01).** This file was lifted to the two-axis programs-vs-protocols framing established in CLAUDE.md (programs are X.0 — 1.0/2.0/3.0/4.0; protocols are 0.X — 0.1/0.2/0.3/0.4; 0.0 is the candidate state). **The shape, guarantees, and validations are unchanged.** Only the language is updated. See [grading-events.md Event 002](grading-events.md) for the lift event log.
 
 ---
 
@@ -71,10 +75,10 @@ This is the recursive shape the bedrock requires: even the rules the bedrock use
 
 ## What a collection program is not
 
-- Not an analysis tool. It does not compute insights, summaries, recommendations, or scores. It walks source and reports what is there. Insights belong to 0.2 (signals over collected data) and 0.3 (orchestration over signals), not here.
+- Not an analysis tool. It does not compute insights, summaries, recommendations, or scores. It walks source and reports what is there. Insights belong to 2.0 signals (under 0.2 protocol) and 3.0 orchestration (under 0.3 protocol), not here.
 - Not a transformer. It does not rewrite source, generate code, fill templates, or produce any output that is not a data point.
-- Not a model. It has no parameters, no thresholds tuned on data, no learned behavior. A program with thresholds tuned on data is a 0.2 artifact and belongs there, not here.
-- Not a wrapper around an LLM. There is no "thin LLM call to extract a number from text." A collector that delegates its judgement to a model is a 0.3 process pretending to be a 0.1 collector.
+- Not a model. It has no parameters, no thresholds tuned on data, no learned behavior. A program with thresholds tuned on data is a 2.0 artifact and belongs under 0.2, not here.
+- Not a wrapper around an LLM. There is no "thin LLM call to extract a number from text." A collector that delegates its judgement to a model is a 3.0 process pretending to be a 1.0 collector.
 
 ## Why this shape
 
@@ -82,7 +86,7 @@ Each constraint exists to close a specific failure mode:
 
 - The audit budget closes *quiet rewrite*. A small program's diff is loud; a large program's diff is camouflage.
 - The single-kind / declared-inputs / declared-schema constraints close *scope creep*. A collector that does many things eventually does the wrong thing.
-- The no-LLM and no-nondeterminism constraints close *bedrock contamination*. The whole experiment leans on the claim that the bottom rung does not lean on a model. A single LLM call in a collector breaks that claim everywhere.
+- The no-LLM and no-nondeterminism constraints close *bedrock contamination*. The whole experiment leans on the claim that the floor does not lean on a model. A single LLM call in a collector breaks that claim everywhere.
 - Self-verification closes *write-only data*. A data point you cannot re-derive is not a measurement; it is a memory.
 
-Holding all of these at once is what makes 0.1 a real floor. The next rung up — 0.2 models trained on what these programs produce — has a chance of meaning what it claims to mean. Without these, the 0.2 datasets are just authored prose with extra steps, and the whole ladder collapses to 0.0.
+Holding all of these at once is what makes the 1.0 floor (graduated under 0.1) real. The next layer up — 2.0 signals trained on what these 1.0 collectors produce — has a chance of meaning what it claims to mean. Without these, the datasets that 0.2 trains over are just authored prose with extra steps, and the whole chain collapses back to 0.0.
