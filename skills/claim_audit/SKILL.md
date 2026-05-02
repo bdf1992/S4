@@ -6,11 +6,11 @@ argument-hint: "[<query.json>]"
 allowed-tools: Bash, Read
 ---
 
-> **About this skill** — surface: cross-repo prose-claim audit · rides under: Claude Code · category: bedrock-instrumentation · pattern: ladder-disciplined-classifier.
+> **About this skill** — surface: cross-repo prose-claim audit · rides under: Claude Code · category: bedrock-instrumentation · pattern: chain-disciplined-classifier.
 
 # claim-audit
 
-A 0.3 orchestration that walks every markdown file in the repo, extracts every inline link, computes a deterministic receipt for each, and emits aggregated stats. Sibling to [regime_audit](../regime_audit/SKILL.md) — same skeleton (collector → signal → orchestrate → verify), different question. `regime_audit` asks *what regime is each file?*; `claim_audit` asks *are the claims our prose makes still true against current source?*.
+A 3.0 orchestration produced under 0.3 that walks every markdown file in the repo, extracts every inline link, computes a deterministic receipt for each, and emits aggregated stats. Sibling to [regime_audit](../regime_audit/SKILL.md) — same skeleton (collector → signal → orchestrate → verify), different question. `regime_audit` asks *what regime is each file?*; `claim_audit` asks *are the claims our prose makes still true against current source?*.
 
 ## Inputs
 
@@ -25,23 +25,23 @@ A 0.3 orchestration that walks every markdown file in the repo, extracts every i
 - [foundations/pointer.md](../../foundations/pointer.md) → [lib/pointer.py](lib/pointer.py)
 - [foundations/zero-four.md](../../foundations/zero-four.md) → [verify.py](verify.py) + [orchestrate.py](orchestrate.py)
 
-## The ladder, by file
+## The chain, by file
 
-### 0.1 layer
+### 1.0 layer (under 0.1)
 
 | Collector | KIND emitted | Source walked |
 | --- | --- | --- |
 | [collectors/markdown_claims.py](collectors/markdown_claims.py) | `md_link` | `**/*.md` (excluding `outputs/`, `__pycache__/`, `.git/`, `node_modules/`, `.venv/`) |
 
-Shared infrastructure: [lib/markdown_walk.py](lib/markdown_walk.py) (corpus walker, fence-aware link extractor, target resolver — pure 0.1, hoisted out of the collector to keep it under audit budget).
+Shared infrastructure: [lib/markdown_walk.py](lib/markdown_walk.py) (corpus walker, fence-aware link extractor, target resolver — pure 1.0, hoisted out of the collector to keep it under audit budget).
 
-### 0.2 layer
+### 2.0 layer (under 0.2)
 
 | Signal | Question answered | Training dataset |
 | --- | --- | --- |
 | [signals/claim_health.py](signals/claim_health.py) | What fraction of internal links resolve `live`? Which source files carry the most dangling claims? | `md_link` data points |
 
-### 0.3 layer
+### 3.0 layer (under 0.3)
 
 - [orchestrate.py](orchestrate.py) — runs the collector, fits the signal, evaluates an optional query, emits a bundle to `outputs/run-<hash>/`.
 - [verify.py](verify.py) — bundle walker; emits `bundle_self_check` data points and exits 0 iff every check passes.
@@ -66,7 +66,7 @@ The skill is healthy iff `live / internal ≥ 0.95` (where `internal = total - e
 
 ## Punts (v1, by construction)
 
-These are documented as kind boundaries — the bedrock forbids LLM judgment in 0.1 collectors, so anything not mechanically extractable is out of scope:
+These are documented as kind boundaries — the bedrock forbids LLM judgment in 1.0 collectors, so anything not mechanically extractable is out of scope:
 
 - **Reference-style links** (`[text][ref]` with `[ref]: url` definitions). Not parsed.
 - **Autolinks** (`<https://example.com>`). Not parsed.
@@ -74,7 +74,7 @@ These are documented as kind boundaries — the bedrock forbids LLM judgment in 
 - **Section-anchor existence** (`#some-heading`). Emitted as `anchor_unverified` rather than guessed; verifying these requires a full markdown heading-slug computation that v1 punts on.
 - **Natural-language assertions** ("Move 1 done", "harness produces siblings", "foundations are immutable"). Out of scope; require LLM judgment, which is exactly what the bedrock fences against.
 
-The fraction of internal claims sitting at `anchor_unverified` is itself a 0.2 signal — `unverified_ratio` — surfaced in stats. It names how much of the prose-claim surface is currently un-graded by construction.
+The fraction of internal claims sitting at `anchor_unverified` is itself a 2.0 signal — `unverified_ratio` — surfaced in stats. It names how much of the prose-claim surface is currently un-graded by construction.
 
 ## Outputs
 
@@ -97,3 +97,4 @@ skills/claim_audit/
 ## Recursion seam
 
 This skill is the second instance of the *bedrock-instrumentation* harness pattern (after `regime_audit`): same lib, same skeleton, different question. A future sibling — `commit_audit` (claims about git history), `dataset_audit` (claims about training data), `skill_doc_audit` (claims SKILL.md files make about their own components) — drops in by replicating the skeleton, swapping the collector's source-walk and the signal's verdict logic. The lib stays bedrock; what changes is what gets walked and what counts as live.
+

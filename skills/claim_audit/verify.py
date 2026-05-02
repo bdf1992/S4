@@ -19,9 +19,12 @@ import json
 import sys
 from pathlib import Path
 
-from .collectors import markdown_claims
-from .lib import audit, collection_program as cp, data_point as dp
-from .signals import claim_health
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from skills.claim_audit.collectors import markdown_claims
+from skills.claim_audit.lib import audit, collection_program as cp, data_point as dp
+from skills.claim_audit.signals import claim_health
 
 COLLECTOR_ID = "verify"
 KIND = "bundle_self_check"
