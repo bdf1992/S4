@@ -18,6 +18,8 @@ skills/orchestration_audit/datasets/
 skills/claim_audit/datasets/
 skills/claim_audit/outputs/
 skills/dashboard/outputs/
+skills/regime_audit/datasets/
+skills/regime_audit/outputs/
 
 # Boards datasets are computed from source by collectors; same policy.
 boards/datasets/
