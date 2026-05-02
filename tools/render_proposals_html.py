@@ -1,7 +1,7 @@
 """HTML render of pending proposals/ — provenance-explicit, validator
 explanations in plain language, candidate source preview, action commands.
 
-Pure 0.1 deterministic transform. Self-contained HTML (inline CSS, no
+Pure 1.0 deterministic transform. Self-contained HTML (inline CSS, no
 external assets). Shows the full chain of trust: gap-collector ->
 gap data point -> proposal -> pre-verification -> awaits operator.
 
@@ -20,6 +20,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PROPOSALS_DIR = REPO_ROOT / "proposals"
 DATASETS_DIR = REPO_ROOT / "skills" / "gap_audit" / "datasets" / "2026-04-30"
+APPROVALS_FILE = REPO_ROOT / "approvals" / "decisions.jsonl"
 
 CHECK_GLOSSARY = {
     "required_constants_present": (
@@ -30,7 +31,7 @@ CHECK_GLOSSARY = {
         "Foundation 2's two-function interface. collect() emits data points; verify() re-walks them. Without both, the collector cannot be re-run or self-checked."),
     "no_llm_sdk_imports": (
         "No anthropic / openai / google.generativeai / cohere imports",
-        "Bedrock rule: a 0.1 collector cannot depend on a language model. If it did, the bottom of the ladder would be a model output — circular grading."),
+        "Bedrock rule: a 1.0 collector (under 0.1 protocol) cannot depend on a language model. If it did, the bottom of the chain would be a model output — circular grading."),
     "no_nondeterminism_imports": (
         "No random / uuid / secrets imports",
         "Same source state must produce byte-identical output. datetime is allowed only inside provenance.collected_at, which Foundation 1 designates advisory and not load-bearing."),
@@ -105,6 +106,60 @@ def _read_json(p: Path) -> dict | None:
         return None
 
 
+def _load_decisions() -> dict[str, dict]:
+    """Map proposal_id -> latest decision record. Last-wins on append-only file."""
+    if not APPROVALS_FILE.is_file():
+        return {}
+    out: dict[str, dict] = {}
+    for line in APPROVALS_FILE.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        pid = rec.get("proposal_id")
+        if isinstance(pid, str):
+            out[pid] = rec
+    return out
+
+
+def _decision_pointer_html(rec: dict) -> str:
+    ab = rec.get("authorized_by")
+    if isinstance(ab, dict):
+        tp = ab.get("transcript_pointer") or {}
+        chan = ab.get("channel", "?")
+        sess = tp.get("session", "?")
+        uuid = tp.get("uuid", "?")
+        return (f'<code>{_esc(chan)}</code> · session <code>{_esc(sess)}</code>'
+                f' · uuid <code>{_esc(uuid)}</code>')
+    by = rec.get("by")
+    if isinstance(by, str):
+        return f'legacy · by <code>{_esc(by)}</code>'
+    return '<span class="no-data">(no pointer)</span>'
+
+
+def _decision_reason_text(rec: dict) -> str | None:
+    rp = rec.get("reason_pointer")
+    if isinstance(rp, dict) and isinstance(rp.get("excerpt"), str):
+        return rp["excerpt"]
+    r = rec.get("reason")
+    if isinstance(r, str):
+        return r
+    return None
+
+
+def _status_from(manifest: dict, decision: dict | None) -> str:
+    if decision and isinstance(decision.get("verdict"), str):
+        v = decision["verdict"]
+        if v == "promote":
+            return "promoted"
+        if v == "reject":
+            return "rejected"
+    return manifest.get("status", "?")
+
+
 def _resolve_gap_dp(dp_id: str) -> dict | None:
     if not dp_id.startswith("skill_without_verifier:"):
         return None
@@ -124,7 +179,8 @@ def _esc(s: str) -> str:
     return _html.escape(str(s))
 
 
-def _render_provenance(manifest: dict, gap_dp: dict | None, prev: dict | None) -> str:
+def _render_provenance(manifest: dict, gap_dp: dict | None, prev: dict | None,
+                       decision: dict | None) -> str:
     gap_collector = "—"; gap_ss = "—"; gap_collected_at = "—"; gap_collector_path = ""
     if gap_dp:
         gap_collector = gap_dp["provenance"]["collector"]["target"].get("collector_id", "—")
@@ -136,6 +192,14 @@ def _render_provenance(manifest: dict, gap_dp: dict | None, prev: dict | None) -
     proposed_at = manifest.get("proposed_at", {}).get("source_state", "—")
     proposed_by = manifest.get("proposed_by", {}).get("target", {}).get("orchestration_id", "—")
     prev_at = (prev or {}).get("provenance", {}).get("collected_at", "—")
+    if decision:
+        verdict = decision.get("verdict", "?")
+        decided_at = decision.get("decided_at", "—")
+        step4 = (f'<div class="prov-step"><strong>4. Decided</strong>verdict <code>{_esc(verdict)}</code> '
+                 f'at {_esc(decided_at)}<br>{_decision_pointer_html(decision)}</div>')
+    else:
+        step4 = ('<div class="prov-step"><strong>4. Awaits operator</strong>writes a line to '
+                 '<code>approvals/decisions.jsonl</code></div>')
     return (
         '<div class="provenance">'
         f'<div class="prov-step"><strong>1. Gap measured</strong>by collector <code>{_esc(gap_collector)}</code>'
@@ -145,7 +209,7 @@ def _render_provenance(manifest: dict, gap_dp: dict | None, prev: dict | None) -
         '<div class="prov-arrow">→</div>'
         f'<div class="prov-step"><strong>3. Pre-verification ran</strong>at {_esc(prev_at)}<br>against the candidate file</div>'
         '<div class="prov-arrow">→</div>'
-        '<div class="prov-step"><strong>4. Awaits operator</strong>writes a line to <code>approvals/decisions.jsonl</code></div>'
+        f'{step4}'
         '</div>'
     )
 
@@ -177,12 +241,13 @@ def _render_checks(prev_value: dict) -> str:
             f'<tbody>{"".join(rows)}</tbody></table>')
 
 
-def _render_proposal(prop_dir: Path) -> str:
+def _render_proposal(prop_dir: Path, decisions: dict[str, dict]) -> str:
     manifest = _read_json(prop_dir / "proposal.json") or {}
     gap = _read_json(prop_dir / "gap.json") or {}
     prev = _read_json(prop_dir / "pre_verification.json") or {}
     pid = manifest.get("proposal_id", prop_dir.name)
-    status = manifest.get("status", "?")
+    decision = decisions.get(pid)
+    status = _status_from(manifest, decision)
     gap_dp = None
     if gap.get("gap_pointers"):
         gap_dp = _resolve_gap_dp(gap["gap_pointers"][0]["target"].get("data_point_id", ""))
@@ -209,7 +274,7 @@ def _render_proposal(prop_dir: Path) -> str:
     parts.append(f'<dt>Claimed kind</dt><dd><code>{_esc(manifest.get("claimed_kind","?"))}</code></dd>')
     parts.append('</dl>')
     parts.append('<h3>Provenance trail</h3>')
-    parts.append(_render_provenance(manifest, gap_dp, prev))
+    parts.append(_render_provenance(manifest, gap_dp, prev, decision))
     if gap.get("narrative"):
         parts.append(f'<h3>The measured gap</h3><div class="gap-narrative">{_esc(gap["narrative"])}</div>')
     parts.append('<h3>Pre-verification — what was checked, in plain language</h3>')
@@ -217,41 +282,57 @@ def _render_proposal(prop_dir: Path) -> str:
     if preview_lines:
         parts.append('<h3>Candidate source — first 30 lines</h3>')
         parts.append(f'<pre class="preview">{_esc(chr(10).join(preview_lines))}</pre>')
-    parts.append('<details><summary>Promote / reject — copy-paste commands</summary><pre>')
-    parts.append(_esc(f"# Promote (writes one line to approvals/decisions.jsonl, then runs the promoter):\n"
-                      f"mkdir -p approvals\n"
-                      f'echo \'{{"proposal_id":"{pid}","verdict":"promote","decided_at":"$(date -Iseconds)","by":"<you>"}}\' >> approvals/decisions.jsonl\n'
-                      f"python -m tools.promote {pid} --dry-run   # preview\n"
-                      f"python -m tools.promote {pid}             # execute\n\n"
-                      f"# Reject (records the decision; no file move):\n"
-                      f'echo \'{{"proposal_id":"{pid}","verdict":"reject","decided_at":"$(date -Iseconds)","by":"<you>","reason":"<short>"}}\' >> approvals/decisions.jsonl'))
-    parts.append('</pre></details></section>')
+    if decision:
+        verdict = decision.get("verdict", "?")
+        decided_at = decision.get("decided_at", "—")
+        reason_text = _decision_reason_text(decision)
+        parts.append('<h3>Decision recorded</h3>')
+        parts.append('<div class="gap-narrative">')
+        parts.append(f'<strong>Verdict</strong> <span class="badge {_esc(status)}">{_esc(verdict)}</span> '
+                     f'at <code>{_esc(decided_at)}</code><br>')
+        parts.append(f'<strong>Authorization</strong> {_decision_pointer_html(decision)}')
+        if reason_text:
+            parts.append(f'<br><br><em>"{_esc(reason_text)}"</em>')
+        parts.append('</div></section>')
+    else:
+        parts.append('<details><summary>Promote / reject — copy-paste commands</summary><pre>')
+        parts.append(_esc(f"# Promote (writes one line to approvals/decisions.jsonl, then runs the promoter):\n"
+                          f"mkdir -p approvals\n"
+                          f'echo \'{{"proposal_id":"{pid}","verdict":"promote","decided_at":"$(date -Iseconds)","by":"<you>"}}\' >> approvals/decisions.jsonl\n'
+                          f"python -m tools.promote {pid} --dry-run   # preview\n"
+                          f"python -m tools.promote {pid}             # execute\n\n"
+                          f"# Reject (records the decision; no file move):\n"
+                          f'echo \'{{"proposal_id":"{pid}","verdict":"reject","decided_at":"$(date -Iseconds)","by":"<you>","reason":"<short>"}}\' >> approvals/decisions.jsonl'))
+        parts.append('</pre></details></section>')
     return "".join(parts)
 
 
-def _summary_banner(dirs: list[Path]) -> str:
+def _summary_banner(dirs: list[Path], decisions: dict[str, dict]) -> str:
     if not dirs:
         return ""
     total = len(dirs)
     n_proposed = 0; n_promoted = 0; n_rejected = 0
     n_overall_pass = 0; n_overall_fail = 0
-    target_skills: list[str] = []
+    pending_swv_skills: list[str] = []
     for d in dirs:
         m = _read_json(d / "proposal.json") or {}
         prev = _read_json(d / "pre_verification.json") or {}
         gap = _read_json(d / "gap.json") or {}
-        s = m.get("status", "?")
+        pid = m.get("proposal_id", "")
+        decision = decisions.get(pid)
+        s = _status_from(m, decision)
         if s == "proposed": n_proposed += 1
         elif s == "promoted": n_promoted += 1
         elif s == "rejected": n_rejected += 1
         ov = (prev.get("value") or {}).get("overall_verdict", "?")
         if ov == "pass": n_overall_pass += 1
         elif ov == "fail": n_overall_fail += 1
-        if gap.get("gap_pointers"):
+        if not decision and gap.get("gap_pointers"):
             dp_id = gap["gap_pointers"][0]["target"].get("data_point_id", "")
-            gap_dp = _resolve_gap_dp(dp_id)
-            if gap_dp:
-                target_skills.append(gap_dp["value"]["skill_pointer"]["target"]["path"])
+            if dp_id.startswith("skill_without_verifier:"):
+                gap_dp = _resolve_gap_dp(dp_id)
+                if gap_dp:
+                    pending_swv_skills.append(gap_dp["value"]["skill_pointer"]["target"]["path"])
     chips = [
         f'<span class="chip"><strong>{total}</strong> total</span>',
         f'<span class="chip proposed"><strong>{n_proposed}</strong> proposed</span>',
@@ -260,38 +341,42 @@ def _summary_banner(dirs: list[Path]) -> str:
         f'<span class="chip pass"><strong>{n_overall_pass}/{total}</strong> pre-verifications pass</span>',
     ]
     growth_line = ""
-    if n_proposed > 0 and target_skills:
-        skill_list = ", ".join(f"<code>{_esc(s)}</code>" for s in target_skills if s != "?")
-        growth_line = (f'<p><strong>Floor-growth potential:</strong> if all {n_proposed} pending proposals promote, '
-                       f'<code>skill_without_verifier</code> gap inventory drains by {n_proposed} (currently 3 '
-                       f'records, would become 0). Targets: {skill_list}. That round-over-round drain — '
-                       f'measurable, anchored to source_state, reproducible — is the floor-growth signal '
-                       f'CLAUDE.md names as the alternative to the vibecoding trap.</p>')
+    if pending_swv_skills:
+        skill_list = ", ".join(f"<code>{_esc(s)}</code>" for s in pending_swv_skills if s != "?")
+        n = len(pending_swv_skills)
+        growth_line = (f'<p><strong>Floor-growth potential:</strong> if the {n} pending '
+                       f'<code>skill_without_verifier</code>-binding proposal(s) promote, that gap inventory '
+                       f'drains by {n}. Targets: {skill_list}. That round-over-round drain — measurable, '
+                       f'anchored to source_state, reproducible — is the floor-growth signal CLAUDE.md '
+                       f'names as the alternative to the vibecoding trap.</p>')
     return (f'<div class="summary"><h2 style="margin-top:0">Summary</h2>'
             f'<div class="chips">{"".join(chips)}</div>'
             f'{growth_line}</div>')
 
 
-def _intro(n: int) -> str:
+def _intro(n_total: int, n_pending: int) -> str:
     return ('<div class="intro">'
             '<p><strong>What you\'re looking at.</strong> Each card below is a candidate <code>verify.py</code> '
             'drafted by the overnight loop in response to a measured gap. The provenance trail shows the chain '
             'of trust from <em>gap measured by a Foundation-2 collector</em> through <em>candidate drafted</em> '
-            'through <em>pre-verification ran</em> to <em>awaiting operator</em>.</p>'
+            'through <em>pre-verification ran</em> to <em>awaiting operator</em> or <em>decided</em>.</p>'
             '<p><strong>How to read it.</strong> The Pre-verification table explains every Foundation-2 check '
             'in plain language alongside its result. A green <span class="badge pass">pass</span> means the '
             'check ran cleanly at draft-time; the same checks run again at promotion-time, so a draft-pass '
             'is not a final pass.</p>'
-            f'<p><strong>{n} pending proposal(s)</strong> below, sorted by proposal_id.</p></div>')
+            f'<p><strong>{n_total} proposal(s)</strong> below ({n_pending} pending operator decision), '
+            f'sorted by proposal_id.</p></div>')
 
 
 def _walk() -> str:
     if not PROPOSALS_DIR.is_dir():
-        return _intro(0)
+        return _intro(0, 0)
     dirs = sorted(d for d in PROPOSALS_DIR.iterdir() if d.is_dir() and (d / "proposal.json").is_file())
-    body = [_summary_banner(dirs), _intro(len(dirs))]
+    decisions = _load_decisions()
+    n_pending = sum(1 for d in dirs if (_read_json(d / "proposal.json") or {}).get("proposal_id") not in decisions)
+    body = [_summary_banner(dirs, decisions), _intro(len(dirs), n_pending)]
     for d in dirs:
-        body.append(_render_proposal(d))
+        body.append(_render_proposal(d, decisions))
     return "".join(body)
 
 
