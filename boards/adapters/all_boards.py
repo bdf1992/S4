@@ -13,13 +13,14 @@ import sys
 from pathlib import Path
 
 from boards import render as renderer
-from boards.adapters import exemplars, grading_events
+from boards.adapters import exemplars, factory_opportunities, grading_events
+from boards.lib import cards as cards_lib
 from debts import validate as _debts_validate
 
 REPO = Path(__file__).resolve().parents[2]
 COLUMNS = ["needs_attention", "healthy"]
 
-OPEN_STATUSES = frozenset({"open", "pending", "proposed"})
+OPEN_STATUSES = cards_lib.OPEN_STATUSES
 
 
 def _debt_cards() -> list[dict]:
@@ -39,6 +40,8 @@ SUB_BOARDS = [
     ("debts", _debt_cards, "debts/"),
     ("grading-events", grading_events.cards, "foundations/grading-events.md"),
     ("exemplars", exemplars.cards, "skills/leash_*/exemplars/"),
+    ("factory-opportunities", factory_opportunities.cards,
+     "skills/gap_audit/ + proposals/ + approvals/"),
 ]
 
 
@@ -62,6 +65,10 @@ def _summarize(name: str, cards_fn, source: str) -> dict:
         "severity": "load_bearing" if status == "needs_attention" else "cosmetic",
         "last_updated_at": last_activity if last_activity != "-" else None,
         "payoff": f"source: {source}",
+        "total": n_total,
+        "open": n_open,
+        "load_bearing_open": n_load_bearing_open,
+        "source_label": source,
     }
 
 
