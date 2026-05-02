@@ -11,9 +11,24 @@ skills/leash_for_hooks/exemplars/proposed/
 skills/leash_for_slash_commands/datasets/
 skills/leash_for_slash_commands/outputs/
 skills/leash_for_slash_commands/exemplars/proposed/
+skills/leash_for_symphony/datasets/
+skills/leash_for_symphony/outputs/
+skills/leash_for_symphony/exemplars/proposed/
 skills/orchestration_audit/datasets/
+skills/claim_audit/datasets/
+skills/claim_audit/outputs/
+skills/dashboard/outputs/
+
+# Boards datasets are computed from source by collectors; same policy.
+boards/datasets/
 
 # Foundations are hardcoded after move 1; this is just python hygiene
 __pycache__/
 *.pyc
 .venv/
+
+# Local Claude Code state (lock files, scratch skill drafts)
+.claude/
+
+# Ephemeral run logs
+overnight_log.jsonl
