@@ -1,6 +1,6 @@
 # Recursion seam — when, and then how, additional leash apparatus is built
 
-CLAUDE.md says: *"the leash also carries the capacity to produce more leashes (and other harness extensions: new skills, new slash commands, new hooks) for sibling harness surfaces, each new leash bedrock-conforming and ladder-disciplined by the same rules."*
+CLAUDE.md says: *"the leash also carries the capacity to produce more leashes (and other harness extensions: new skills, new slash commands, new hooks) for sibling harness surfaces, each new leash bedrock-conforming and protocol-disciplined by the same rules."*
 
 The skeleton of `leash_for_hooks` is parameterized by **surface** (which Claude Code harness surface the leash constrains), so the *how* of producing a sibling is mechanical: a structural copy-and-substitute that touches a small, declared set of seams, with everything in [lib/](lib/) shared verbatim. The mechanical steps are documented later in this file.
 
@@ -8,9 +8,9 @@ The *when* is upstream of that and is the more important question: under what co
 
 ## When the seam fires (the operator-side gate)
 
-The recursion seam is **0.2-shaped, not 0.3-shaped** — it is a signal whose verdict the operator consults, not an orchestration that emits new leashes. The default is **no growth**: apparatus is added (or retrained, or repaired, or replaced) only when the existing apparatus's own measurements indicate it is no longer sufficient for what the operator is asking of it.
+The recursion seam is **2.0-shaped, not 3.0-shaped** — it is a signal whose verdict the operator consults, not an orchestration that emits new leashes. The default is **no growth**: apparatus is added (or retrained, or repaired, or replaced) only when the existing apparatus's own measurements indicate it is no longer sufficient for what the operator is asking of it.
 
-This is the same principle as CLAUDE.md's *"0.4 is driven by 0.2, not by request,"* extended one level up. The bedrock decides whether a 0.4 emission is permitted from inside a leash; the same logic applies to whether *the existence of a new leash* is permitted from outside one. The signal informs; the operator decides; the system never silently produces additional apparatus.
+This is the same principle as CLAUDE.md's *"0.4 emits 4.0 only when 2.0 signals fire,"* extended one level up. The bedrock decides whether a 4.0 emission is permitted from inside a leash; the same logic applies to whether *the existence of a new leash* is permitted from outside one. The signal informs; the operator decides; the system never silently produces additional apparatus.
 
 Five outcomes the operator can take when consulting the signals from existing leashes. Each corresponds to a different shape of gap-record from the existing leash — or, in the last case, from the operator's session history.
 
@@ -20,23 +20,23 @@ Five outcomes the operator can take when consulting the signals from existing le
 - *Gap-record:* repeated `not_ready` from `emission_readiness` with the same `shortfall_per_kind` over many runs, or persistent `insufficient_training_exemplars` with no new promotions arriving.
 - *Action:* grow the corpus the existing collectors walk (more user-authored hooks, more exemplars promoted), then re-run. No new files; no new leash.
 
-**3. Repair (specific 0.1 collector or 0.2 signal).** A component is drifting against the source it tracks.
+**3. Repair (specific 1.0 collector or 2.0 signal).** A component is drifting against the source it tracks.
 - *Gap-record:* a collector's `verify()` returning `dangling` on a high fraction of previously-emitted data points (the source moved under it); a signal's probe set still passing but its real-world verdicts contradicting accumulated operator approvals; an audit-budget violation newly appearing.
 - *Action:* fix the specific component. The leash itself remains.
 
 **4. Replace (the leash is the wrong shape for its surface).** The surface has shifted, or the original shape was a misfit.
 - *Gap-record:* persistent `rejected` / `unleashed` at high rates with no obvious operator misuse; multiple distinct `gap_record.reason` values accumulating across runs; the surface taxonomy has changed enough that the dataset-membership decision no longer maps cleanly.
-- *Action:* the existing leash informs the new one — its data, its 0.2 fits, its accumulated gap_records become inputs to the new leash's design — but is otherwise discarded. This is the upgrade path.
+- *Action:* the existing leash informs the new one — its data, its 2.0 signal fits, its accumulated gap_records become inputs to the new leash's design — but is otherwise discarded. This is the upgrade path.
 
 **5. Build new alongside (a different surface).** The signal is not from inside any existing leash; it is a meta-signal across the operator's hand-walked work.
-- *Gap-record:* the operator is repeatedly applying ladder discipline by hand to a surface no existing leash covers. Every time the same shape of ad-hoc verification gets re-derived, that recurrence is the signal that a new leash should formalize it.
+- *Gap-record:* the operator is repeatedly applying chain discipline by hand to a surface no existing leash covers. Every time the same shape of ad-hoc verification gets re-derived, that recurrence is the signal that a new leash should formalize it.
 - *Action:* run the mechanical steps below for the new surface.
 
 The signal-source for outcomes 2–4 lives **inside** the existing leash (its own datasets, signals, and verify output). The signal-source for outcome 5 lives in the **operator's session history** — what gets done by hand repeatedly. Both are real signals; neither is a request alone. Until one of them fires, the seam stays closed and no new apparatus is produced.
 
 ## What is shared (verbatim across all sibling leashes)
 
-These files are **bedrock-shared**. A sibling leash imports them; it does not reimplement them. If a sibling leash needs to change anything in this list, that's a 0.4 grading event on the foundations themselves, not a sibling-private change.
+These files are **bedrock-shared**. A sibling leash imports them; it does not reimplement them. If a sibling leash needs to change anything in this list, that's a 4.0 grading event on the foundations themselves, not a sibling-private change.
 
 - [foundations/data-point.md](../../foundations/data-point.md), [foundations/collection-program.md](../../foundations/collection-program.md), [foundations/pointer.md](../../foundations/pointer.md), [foundations/zero-four.md](../../foundations/zero-four.md) — the bedrock spec.
 - [foundations/llm-sdk-denylist.txt](../../foundations/llm-sdk-denylist.txt) — the SDK denylist source.
@@ -86,9 +86,9 @@ Each leash declares its own ordered decision points. The pattern:
 
 ```python
 DECISION_POINTS = [
-    ("<thing>_validity",  "<surface>_decl"),       # 0.1 dataset membership
-    ("collision_check",   "<surface>_collision"),  # 0.2 surface-specific signal
-    ("emission_gate",     "emission_readiness"),   # 0.2 shared signal
+    ("<thing>_validity",  "<surface>_decl"),       # 1.0 dataset membership
+    ("collision_check",   "<surface>_collision"),  # 2.0 surface-specific signal
+    ("emission_gate",     "emission_readiness"),   # 2.0 shared signal
 ]
 ```
 
@@ -103,7 +103,7 @@ Each sibling carries its own [leash_state.json](leash_state.json) at the skill r
 The Anthropic Agent Skill spec's frontmatter has a fixed schema (`name`, `description`, `when_to_use`, `argument-hint`, `allowed-tools`, `license`); there is no `metadata:` block and no `surface:` field. Earlier drafts of [SKILL.md](SKILL.md) carried an invented metadata block with `surface:`; the current SKILL.md captures the surface in a body-level "About this skill" line:
 
 ```markdown
-> **About this skill** — surface: `<claude-code-surface-name>` · rides under: Claude Code · category: harness-control · pattern: ladder-disciplined-leash. License: MIT.
+> **About this skill** — surface: `<claude-code-surface-name>` · rides under: Claude Code · category: harness-control · pattern: chain-disciplined-leash. License: MIT.
 ```
 
 This is the load-bearing identifier; sibling leashes declare their surface here. Two leashes with the same surface conflict and `verify.py` should reject (a future cross-leash check that parses the line, since it's no longer a structured frontmatter field).
@@ -126,15 +126,15 @@ Spawning a sibling leash for, say, slash commands:
 
 The 10 steps are mechanical. The actual *engineering* in a sibling leash is in (a) what shape the surface's data points have (= the value_schema), (b) what the surface's collision rule is, and (c) what the taxonomy file contains. Everything else is structural copy-and-substitute.
 
-## Why "more leashes" is the success indicator, not "first 0.4 bundle"
+## Why "more leashes" is the success indicator, not "first 4.0 bundle"
 
 CLAUDE.md says floor-growth is the metric: the per-round generative share should shrink as the floor grows. The seam above is the mechanism:
 
-- Round 1 (this leash): the entire 0.1 layer is built from scratch. 4 collectors, 3 resolvers, 4 lib modules, 1 reference taxonomy. Generative share is high.
+- Round 1 (this leash): the entire 1.0 layer is built from scratch. 4 collectors, 3 resolvers, 4 lib modules, 1 reference taxonomy. Generative share is high.
 - Round 2 (sibling leash for slash-commands): all of `lib/`, `resolvers/`, `collectors/llm_sdk_denylist.py`, `signals/emission_readiness.py` are reused verbatim — the floor. Only the surface-specific seams (steps 5–9 above) are new. Generative share is much smaller.
 - Round 3 (sibling leash for MCP wirings): same again. By now the lift-to-shared refactor (step 4 above) has happened; siblings import from a shared `bedrock/` package; generative share is purely surface-specific shape and rules.
 
-If round 3's generative share is *not* meaningfully smaller than round 1's, the seam is wrong (or the foundations are too thin), and that itself is a 0.4 grading event on the foundations. *That* is what makes the floor-growth metric falsifiable.
+If round 3's generative share is *not* meaningfully smaller than round 1's, the seam is wrong (or the foundations are too thin), and that itself is a 4.0 grading event on the foundations. *That* is what makes the floor-growth metric falsifiable.
 
 Floor-growth is a metric *given that signals are firing for new rounds*. If no signal fires (no surface is being hand-walked repeatedly, no gap-record is accumulating, no existing leash is drifting), there is no round N+1 and the metric is undefined for that period — not failed. Absence of recursion in the absence of a signal is the correct state of a healthy system. The metric falsifies only when a round happens *and* the per-round generative share fails to shrink.
 

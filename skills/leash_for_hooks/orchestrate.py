@@ -23,6 +23,7 @@ from pathlib import Path
 from .collectors import (llm_sdk_denylist, hook_event_decl, hook_config,
                          exemplar_bundle_state)
 from .lib import data_point as dp, leash_state as ls
+from .lib.receipts import validation_receipts
 from .signals import hook_collision, emission_readiness
 
 DECISION_POINTS = [
@@ -125,6 +126,8 @@ def emit_bundle(collector_summary: dict, log: list[dict], outcome: dict) -> Path
         "leash_state": ls.read(SKILL_ROOT),
         "log_path": "orchestration-log.jsonl",
         "candidate_path": "candidate.json",
+        "validation_receipts": validation_receipts(
+            SKILL_ROOT, collector_summary, (hook_collision, emission_readiness)),
         "skill_root": str(SKILL_ROOT.relative_to(SKILL_ROOT.parents[1])),
     }
     if outcome.get("verdict") == "candidate":

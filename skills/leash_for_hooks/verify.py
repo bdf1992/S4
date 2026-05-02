@@ -21,15 +21,18 @@ import json
 import sys
 from pathlib import Path
 
-from .collectors import (llm_sdk_denylist, hook_event_decl, hook_config,
-                         exemplar_bundle_state)
-from .lib import audit, collection_program as cp, data_point as dp
-from .lib import leash_state as ls
-from .lib import pointer as ptr
-from .resolvers import collector as collector_resolver
-from .resolvers import data_point as data_point_resolver
-from .resolvers import file_line as file_line_resolver
-from .signals import emission_readiness, hook_collision
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from skills.leash_for_hooks.collectors import (llm_sdk_denylist, hook_event_decl, hook_config,
+                                               exemplar_bundle_state)
+from skills.leash_for_hooks.lib import audit, collection_program as cp, data_point as dp
+from skills.leash_for_hooks.lib import leash_state as ls
+from skills.leash_for_hooks.lib import pointer as ptr
+from skills.leash_for_hooks.resolvers import collector as collector_resolver
+from skills.leash_for_hooks.resolvers import data_point as data_point_resolver
+from skills.leash_for_hooks.resolvers import file_line as file_line_resolver
+from skills.leash_for_hooks.signals import emission_readiness, hook_collision
 
 COLLECTOR_ID = "verify"
 KIND = "bundle_self_check"
@@ -44,6 +47,7 @@ INPUTS = [
 ]
 
 SKILL = Path(__file__).resolve().parent
+REPO_ROOT = SKILL.parents[1]
 COLLECTORS = (llm_sdk_denylist, hook_event_decl, hook_config, exemplar_bundle_state)
 RESOLVERS = (file_line_resolver, collector_resolver, data_point_resolver)
 SIGNALS = (hook_collision, emission_readiness)
@@ -158,6 +162,30 @@ def _check_leash_state() -> list[dict]:
                    state=state, validation_reason=reason or "ok")]
 
 
+def _check_validation_receipts(manifest: dict) -> dict:
+    receipts = manifest.get("validation_receipts", {})
+    missing = []
+    walker = receipts.get("bundle_walker")
+    if not walker or not (SKILL / walker).exists():
+        missing.append("bundle_walker")
+    for cid, meta in receipts.get("collector_receipts", {}).items():
+        for key in ("dataset", "source_state"):
+            rel = meta.get(key)
+            if not rel or not (SKILL / rel).exists():
+                missing.append(f"collector_receipts.{cid}.{key}")
+    for sid, rel in receipts.get("signal_probe_runners", {}).items():
+        if not rel or not (REPO_ROOT / rel).exists():
+            missing.append(f"signal_probe_runners.{sid}")
+    expected_collectors = {mod.COLLECTOR_ID for mod in COLLECTORS}
+    expected_signals = {mod.SIGNAL_ID for mod in SIGNALS}
+    declared_collectors = set(receipts.get("collector_receipts", {}))
+    declared_signals = set(receipts.get("signal_probe_runners", {}))
+    missing.extend(f"collector_receipts.{cid}" for cid in sorted(expected_collectors - declared_collectors))
+    missing.extend(f"signal_probe_runners.{sid}" for sid in sorted(expected_signals - declared_signals))
+    return _check("validation_receipts", "output_bundle.validation_receipts",
+                  "pass" if not missing else "fail", missing=missing)
+
+
 def _check_output_bundle(bundle_dir: Path) -> list[dict]:
     out = []
     mp = bundle_dir / "manifest.json"
@@ -191,6 +219,7 @@ def _check_output_bundle(bundle_dir: Path) -> list[dict]:
     out.append(_check(bundle_dir.name, "output_bundle.claim_consistency",
                       "pass" if claim in ("0.4", "candidate", "rejected", "unleashed") else "fail",
                       claim=claim))
+    out.append(_check_validation_receipts(manifest))
     return out
 
 

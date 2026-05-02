@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 from skills.leash_for_hooks.lib import data_point as dp, leash_state as ls
+from skills.leash_for_hooks.lib.receipts import validation_receipts
 from skills.leash_for_hooks.signals import emission_readiness
 
 from .collectors import (slash_command_decl, slash_command_config,
@@ -121,6 +122,8 @@ def emit_bundle(collector_summary: dict, log: list[dict], outcome: dict) -> Path
         "leash_state": ls.read(SKILL_ROOT),
         "log_path": "orchestration-log.jsonl",
         "candidate_path": "candidate.json",
+        "validation_receipts": validation_receipts(
+            SKILL_ROOT, collector_summary, (slash_command_collision, emission_readiness)),
         "skill_root": str(SKILL_ROOT.relative_to(SKILL_ROOT.parents[1])),
     }
     if outcome.get("verdict") == "candidate":
