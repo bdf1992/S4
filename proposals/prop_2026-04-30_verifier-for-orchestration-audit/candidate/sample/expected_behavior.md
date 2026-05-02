@@ -30,8 +30,8 @@ Re-running produces byte-identical witnesses (provenance.collected_at differs bu
 
 ## Scope boundary
 
-orchestration_audit is a Foundation-2 collector skill — one collector module + one local lib + one dataset, no orchestrate.py, no signals/ yet. The verifier checks file-level structural and import-cleanliness predicates over the two Python files plus presence of the collector-produced dataset. It does NOT exercise the collector against fresh source (would require a full orchestration corpus to walk, and a 0.4 bundle harness, both outside the scope of a per-skill verify.py at this stage).
+orchestration_audit is a Foundation-2 collector skill — one collector module + one local lib + one dataset, no orchestrate.py, no signals/ yet. The verifier checks file-level structural and import-cleanliness predicates over the two Python files plus presence of the collector-produced dataset. It does NOT exercise the collector against fresh source (would require a full orchestration corpus to walk, and a 4.0 bundle harness, both outside the scope of a per-skill verify.py at this stage).
 
-The dataset-presence checks are load-bearing for this skill: orchestration_audit's claim is "0.3 self-report → 0.1 measurement," and the measurement only exists if the collector has been run and the dataset persisted. A missing dataset is a real failure, not a stylistic miss.
+The dataset-presence checks are load-bearing for this skill: orchestration_audit's claim is "3.0 self-report → 1.0 measurement," and the measurement only exists if the collector has been run and the dataset persisted. A missing dataset is a real failure, not a stylistic miss.
 
 If the operator wants richer verification (collector re-run determinism check, dataset row schema validation, signal/orchestration audits if those are added later), that is an explicit promotion-time decision and would extend this candidate before promotion.

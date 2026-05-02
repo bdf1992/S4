@@ -1,0 +1,341 @@
+{
+  "gap_pointers": [
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:fca15457a0459b30"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:cbcc73c548d41d86"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:6278b00289a13108"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:d2298f62ce586bbe"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:47b7e0f04ec51690"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:314d4a9ac45e2c91"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:fd37157c61a8d4bc"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:4741da23339b953a"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:32c1bc27e42b3d9e"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:03e4c0c1aa915170"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:2e5422ef75b06601"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:28dba9a8f775d4a7"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:d5a219aea5ba18b9"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:2928e6fdbbe0583c"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:9a253a8523af9929"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:8ec7e02d2ea37610"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:cd726302b0468318"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:33028f6701c50b6c"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:8a2e8b7cbcbc6989"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:b3a4e17b697e96b9"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:754c1bc6c76cb775"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:7813dbff0831ab65"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:ac69d0f8554d9a40"
+      }
+    },
+    {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+      },
+      "kind": "data_point",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "data_point_resolver",
+      "target": {
+        "data_point_id": "surface_inventory_absence:cdadb8e10d051d80"
+      }
+    }
+  ],
+  "narrative": "surface_inventory_absence emits one data point per inline surface-scope declaration in verifier and gap-collector sources. At source_state sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32 the collector found 24 occurrences across 14 files (distribution: 22 inline_scope_constant, 2 inline_walk_function). Each occurrence is one place where a file's 'what artifacts do I cover' knowledge is hardcoded inline rather than read from a unified surface inventory. surface_inventory (this proposal's candidate) emits one surface_inventory_entry data point per repo artifact (proposal/skill/foundation/meeting_note); once graduated, consuming files refactor to read from those data points and these gap occurrences become dangling. Closure: every gap_pointer above re-resolves dangling at a future source_state where the cited symbol no longer satisfies the absence_kind."
+}

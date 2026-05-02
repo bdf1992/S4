@@ -1,0 +1,91 @@
+{
+  "id": "surface_inventory_pre_verification:e641a96707fbf0ad",
+  "kind": "pre_verification_summary",
+  "provenance": {
+    "collected_at": "2026-05-01T21:11:41+00:00",
+    "collector": {
+      "bound_at": {
+        "resolved_at": null,
+        "source_state": null
+      },
+      "kind": "orchestration",
+      "last_payload": null,
+      "last_reason": null,
+      "last_status": "unresolved",
+      "resolver": "orchestration_resolver",
+      "target": {
+        "orchestration_id": "iter_doctrine_crosswalk_drafting"
+      }
+    },
+    "source_state": "sha256:4dd604720f0b2fc5eae51b324d6a6d798e57febb15de7a161cdfd4c80f63ea32"
+  },
+  "value": {
+    "candidate_path": "proposals/prop_2026-05-01_surface-inventory-and-expectation-check/candidate/surface_inventory.py",
+    "checks": {
+      "audit_budget_under_80": {
+        "budget": 80,
+        "method": "awk pass excluding module docstring, imports, VALUE_SCHEMA dict, INPUTS list, _EXPECTATIONS dict",
+        "substantive_lines": 71,
+        "verdict": "pass"
+      },
+      "candidate_runs_clean_against_repo": {
+        "method": "Imported candidate, ran collect() against current repo state; counted emitted data points without error.",
+        "records_emitted": 30,
+        "verdict": "pass"
+      },
+      "determinism_runtime_check": {
+        "method": "Imported candidate, ran collect() twice with same source_state, compared all witnesses + ids + values modulo advisory collected_at.",
+        "records_compared": 30,
+        "verdict": "pass"
+      },
+      "no_llm_sdk_imports": {
+        "all_imports": [
+          "__future__",
+          "datetime",
+          "hashlib",
+          "json",
+          "pathlib",
+          "typing"
+        ],
+        "banned_matches": [],
+        "denylist": [
+          "anthropic",
+          "openai",
+          "google",
+          "cohere"
+        ],
+        "verdict": "pass"
+      },
+      "no_nondeterminism_imports": {
+        "banned_matches": [],
+        "denylist": [
+          "random",
+          "uuid",
+          "secrets"
+        ],
+        "note": "datetime IS imported but is only used for provenance.collected_at, advisory per Foundation 1.",
+        "verdict": "pass"
+      },
+      "required_constants_present": {
+        "found": [
+          "COLLECTOR_ID",
+          "INPUTS",
+          "KIND",
+          "VALUE_SCHEMA"
+        ],
+        "missing": [],
+        "verdict": "pass"
+      },
+      "required_functions_present": {
+        "found": [
+          "collect",
+          "verify"
+        ],
+        "missing": [],
+        "verdict": "pass"
+      }
+    },
+    "overall_verdict": "pass"
+  },
+  "witness": "e641a96707fbf0ad"
+}

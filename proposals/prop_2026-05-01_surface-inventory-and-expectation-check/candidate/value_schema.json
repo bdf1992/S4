@@ -1,0 +1,12 @@
+{
+  "kind": "surface_inventory_entry",
+  "type": "object",
+  "required": ["path", "artifact_kind", "graduation_state", "declared_expectation_kinds"],
+  "properties": {
+    "path": {"type": "string"},
+    "artifact_kind": {"enum": ["proposal", "skill", "foundation", "meeting_note", "other"]},
+    "graduation_state": {"enum": ["candidate", "graduated", "archived", "unknown"]},
+    "declared_expectation_kinds": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

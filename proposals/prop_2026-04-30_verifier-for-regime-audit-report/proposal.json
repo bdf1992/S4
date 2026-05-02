@@ -49,5 +49,28 @@
     "last_payload": null,
     "last_reason": null
   },
-  "decision_record_pointer": null
+  "decision_record_pointer": null,
+  "stakes": {
+    "what_this_is": "A 108-line Python walker (verify.py) that runs over skills/regime_audit_report/ and exits 0 iff its renderer file is present, parses, imports cleanly, and declares the constants + entry function a render-skill requires. regime_audit_report is a render skill (its claim is the contract stats.json -> report.md), not a collector — so this verifier checks renderer-shape, not collector-shape. Same family as the dashboard verifier above; different shape under the hood.",
+    "why_we_build_it": "Same load-bearing rule from CLAUDE.md as the verifier-for-dashboard proposal: 'If a 3.0-under-0.4 cannot walk it, it is not 4.0.' Render skills are no exception — they make structural claims that need walker-based verification. The gap was auto-detected by the same skills/gap_audit/collectors/skill_without_verifier.py.",
+    "if_approved": [
+      "skills/regime_audit_report/verify.py lands (108 lines).",
+      "Gap data point skill_without_verifier:756c48f... flips from live to resolved on the next gap_audit run.",
+      "Render skills get a structural-verifier precedent, parallel to the collector-skill precedent set by the dashboard verifier above.",
+      "Floor ratio inches up by one more 1.0 file.",
+      "Likely a paired decision with the dashboard verifier above — approving both is the consistent move."
+    ],
+    "if_rejected": [
+      "Gap stays open. Render skills remain unchecked at the structural layer.",
+      "Implies the same policy signal as a reject on the dashboard verifier — paired-rejection for shape consistency.",
+      "Strengthens the case for parameterized-bundle-verifier as the path forward for this gap class."
+    ],
+    "connects_to": [
+      {"label": "Foundation rule that motivates this proposal", "path": "foundations/zero-four.md"},
+      {"label": "Auto-detected the gap (skill_without_verifier collector)", "path": "skills/gap_audit/collectors/skill_without_verifier.py"},
+      {"label": "Paired pending proposal — same shape family, different target (decide together)", "path": "proposals/prop_2026-04-30_verifier-for-dashboard"},
+      {"label": "Already-promoted proposal of same shape — precedent", "path": "skills/subprotocol-for-claude-code/verify.py"},
+      {"label": "Replacement shape under draft", "path": "proposals/prop_2026-04-30_parameterized-bundle-verifier"}
+    ]
+  }
 }

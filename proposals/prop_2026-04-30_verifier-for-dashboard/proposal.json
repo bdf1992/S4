@@ -49,5 +49,30 @@
     "last_payload": null,
     "last_reason": null
   },
-  "decision_record_pointer": null
+  "decision_record_pointer": null,
+  "stakes": {
+    "what_this_is": "A 103-line Python walker (verify.py) that runs over skills/dashboard/ and exits 0 iff every entry-point file (render.py, snapshot.py, narrate.py, html.py) is present, parses, imports nothing from the LLM SDK or nondeterminism denylists, and declares the constants + functions a Foundation-2 collector requires. In one line: it moves the dashboard skill's '1.0 deterministic, no LLM in renders' claim from prose to a thing that gets checked.",
+    "why_we_build_it": "CLAUDE.md states the load-bearing rule: 'If a 3.0-under-0.4 cannot walk it, it is not 4.0.' The dashboard skill is currently sub-4.0 by the experiment's own rule because no walker confirms its shape. The gap was auto-detected by skills/gap_audit/collectors/skill_without_verifier.py — a 1.0 program noticing absence — not a hand-flagged item. Foundation discipline says detected absences get closed.",
+    "if_approved": [
+      "skills/dashboard/verify.py lands (103 lines, deterministic, no LLM, no nondeterminism). Any agent or human can run it.",
+      "The dashboard you are reading this on becomes walkable — meta: it graduates to a 4.0 candidate.",
+      "Gap data point skill_without_verifier:21d380eb... flips from live to resolved on the next gap_audit run.",
+      "Floor ratio (1.0+2.0)/3.0 inches up by one new 1.0 file.",
+      "Precedent: structural verifiers (presence + parse + import-deny) are an acceptable closure shape for skills claiming '1.0 deterministic, no SDK.' The paired proposal (verifier-for-regime-audit-report) below should follow this decision."
+    ],
+    "if_rejected": [
+      "skill_without_verifier:21d380eb... stays open in the gap_audit dataset.",
+      "Dashboard remains sub-4.0 until something else closes the gap (a different verifier shape, or a rewrite of the skill's claim).",
+      "Your reason becomes a policy signal — e.g. 'structural-only verifiers are not enough.' Consistency means the paired proposal below should also be rejected for the same reason.",
+      "Strengthens the case for the parameterized-bundle-verifier draft as the eventual replacement shape."
+    ],
+    "connects_to": [
+      {"label": "Foundation rule that motivates this proposal", "path": "foundations/zero-four.md"},
+      {"label": "Auto-detected the gap (skill_without_verifier collector)", "path": "skills/gap_audit/collectors/skill_without_verifier.py"},
+      {"label": "Paired pending proposal — same shape, different target (decide together)", "path": "proposals/prop_2026-04-30_verifier-for-regime-audit-report"},
+      {"label": "Already-promoted proposal of same shape — precedent", "path": "skills/subprotocol-for-claude-code/verify.py"},
+      {"label": "Already-rejected proposal of same shape (target had a behavioral verifier — wrong-fit there)", "path": "approvals/decisions.jsonl"},
+      {"label": "Replacement shape under draft", "path": "proposals/prop_2026-04-30_parameterized-bundle-verifier"}
+    ]
+  }
 }

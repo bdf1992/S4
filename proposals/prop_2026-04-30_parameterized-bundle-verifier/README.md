@@ -46,20 +46,20 @@ This is the SubProtocol "skills floor-growth" pattern: same logic, parameterized
 
 ## What's missing to become a Foundation-2 proposal
 
-Per CLAUDE.md, "0.4 is driven by 0.2, not by request." This draft was written because I recommended it and the operator agreed — there is currently **no measured gap** that says "verifiers are unparameterized." That collector does not exist yet.
+Per CLAUDE.md, "0.4 emits 4.0 only when 2.0 signals fire." This draft was written because I recommended it and the operator agreed — there is currently **no measured gap** that says "verifiers are unparameterized." That collector does not exist yet.
 
 To upgrade from design preview to proposal:
 
-1. **Build a `verifier_redundancy` gap collector** under `skills/gap_audit/collectors/`. It walks `skills/*/verify.py` (and `proposals/.../candidate/*_verifier.py`), measures structural duplication (shared helpers, identical denylists), and emits a `verifier_redundancy` data point per redundant pattern. That's the 0.2 signal.
+1. **Build a `verifier_redundancy` gap collector** under `skills/gap_audit/collectors/`. It walks `skills/*/verify.py` (and `proposals/.../candidate/*_verifier.py`), measures structural duplication (shared helpers, identical denylists), and emits a `verifier_redundancy` data point per redundant pattern. That's the 2.0 signal.
 2. **Wire this draft as the candidate** that closes the resulting gap data points. Move `bundle_verifier.py` + the 4 shims into the proposal's `candidate/` directory; produce `gap.json`, `pre_verification.json`, `proposal.json`.
 3. **Run the existing skill_without_verifier collector** to confirm that promoting this library closes the four `skill_without_verifier:*` gap data points the same way the hardcoded versions do (it does, behaviorally).
 
-Until step 1, this is a 0.0/0.3 design exercise — useful for evaluation, **not yet a 0.4 emission**.
+Until step 1, this is a 0.0-stage design exercise authored by a 3.0 — useful for evaluation, **not yet a 4.0 emission**.
 
 ## Two migration paths for the operator
 
 **Path A — sequential (lower risk, slower floor-growth):**
-1. Promote one of the four hardcoded proposals now as the 0.4-conformant baseline.
+1. Promote one of the four hardcoded proposals now as the 4.0-conformant baseline.
 2. Build the `verifier_redundancy` gap collector in a later iteration.
 3. Build the parameterized verifier as a measured-gap-driven proposal.
 4. Re-promote the four skills onto the parameterized library.

@@ -26,6 +26,6 @@ Re-running produces byte-identical witnesses (provenance.collected_at differs bu
 
 ## Scope boundary
 
-dashboard is a multi-entry-point render skill with no collectors or signals. The verifier checks file-level structural and import-cleanliness predicates over the four Python entry points. It does NOT exercise the entry points end-to-end (would require fixture inputs and a 0.4 bundle harness, both outside the scope of a per-skill verify.py at this stage).
+dashboard is a multi-entry-point render skill with no collectors or signals. The verifier checks file-level structural and import-cleanliness predicates over the four Python entry points. It does NOT exercise the entry points end-to-end (would require fixture inputs and a 4.0 bundle harness, both outside the scope of a per-skill verify.py at this stage).
 
 If the operator wants richer verification (fixture-based render output diff, snapshot reproducibility check), that is an explicit promotion-time decision and would extend this candidate before promotion.
