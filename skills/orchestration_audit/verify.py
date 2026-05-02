@@ -19,6 +19,9 @@ import json
 import sys
 from pathlib import Path
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 from skills.orchestration_audit.lib import data_point as dp
 from skills.orchestration_audit.collectors import (
     orchestration_activations as oa,
@@ -98,7 +101,9 @@ def _check_collector_verify(name: str, mod) -> tuple[str, str, str]:
     bad = [(d["id"], mod.verify(d)) for d in dps]
     dangling = [(i, r) for i, (s, r) in bad if s != "live"]
     if dangling:
-        return _check(f"{name}_all_live", False, f"dangling:{len(dangling)}")
+        first_id, (_, first_reason) = dangling[0][0], next((s, r) for i, (s, r) in bad if i == dangling[0][0])
+        return _check(f"{name}_all_live", False,
+                      f"dangling:{len(dangling)}/{len(dps)} first={first_id}:{first_reason}")
     return _check(f"{name}_all_live", True, f"{len(dps)}/{len(dps)}_live")
 
 
@@ -131,18 +136,17 @@ def _check_probes() -> list[tuple[str, str, str]]:
     return out
 
 
-def _check_pfsm_freshness() -> tuple[str, str, str]:
-    """Verify pfsm_parameters was fit on the current activations corpus."""
-    params_path = SKILL / "datasets" / "pfsm_parameters.jsonl"
-    if not params_path.is_file():
-        return _check("pfsm_freshness", False, "params_missing")
-    line = next((l for l in params_path.read_text(encoding="utf-8").splitlines() if l.strip()), None)
+def _check_collector_freshness(name: str, mod) -> tuple[str, str, str]:
+    """Verify the collector's stored source_state matches its current compute_source_state()."""
+    path = SKILL / "datasets" / f"{mod.COLLECTOR_ID}.jsonl"
+    if not path.is_file():
+        return _check(f"{name}_freshness", False, "dataset_missing")
+    line = next((l for l in path.read_text(encoding="utf-8").splitlines() if l.strip()), None)
     if not line:
-        return _check("pfsm_freshness", False, "params_empty")
-    rec = json.loads(line)
-    expected_ss = pp.compute_source_state()
-    actual_ss = rec["provenance"]["source_state"]
-    return _check("pfsm_freshness",
+        return _check(f"{name}_freshness", False, "dataset_empty")
+    actual_ss = json.loads(line)["provenance"]["source_state"]
+    expected_ss = mod.compute_source_state()
+    return _check(f"{name}_freshness",
                   actual_ss == expected_ss,
                   "fresh" if actual_ss == expected_ss else f"stale:{actual_ss[:18]}_vs_{expected_ss[:18]}")
 
@@ -158,10 +162,12 @@ def collect(source_state: str) -> list[dict]:
         checks.append(_check(f"{rel.split('/')[-1]}_present",
                              (SKILL / rel).is_file(),
                              "exists" if (SKILL / rel).is_file() else "missing"))
+    checks.append(_check_collector_freshness("activations", oa))
+    checks.append(_check_collector_freshness("honesty", dph))
+    checks.append(_check_collector_freshness("pfsm", pp))
     checks.append(_check_collector_verify("activations", oa))
     checks.append(_check_collector_verify("honesty", dph))
     checks.append(_check_collector_verify("pfsm", pp))
-    checks.append(_check_pfsm_freshness())
     checks.extend(_check_probes())
     return [dp.make_data_point(
         collector_id=COLLECTOR_ID, kind=KIND,
