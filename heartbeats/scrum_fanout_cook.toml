@@ -1,0 +1,25 @@
+# Hand-play 003 config — scrum + fan_out cook over scrum's next_targets.
+# This is the headline example from prop:2026-05-03:heartbeat-pattern,
+# narrowed to the highest-leverage ranked bucket.
+#
+# Tests:
+#   - substitution with index + dotted access (item shape)
+#   - fan_out spawning N parallel cook subagents
+#   - per-item idempotency (cook with target X at HEAD H is unique)
+#   - aggregate of fan_out results (each item's session record)
+# Does NOT test: loop, scheduled-remote dispatch, real Agent-tool subagents.
+
+schedule = "operator-triggered"
+surface  = "agent-subagent"
+loop     = false
+
+[[step]]
+id    = "scrum"
+skill = "scrum"
+
+[[step]]
+id      = "cook_targets"
+skill   = "cook"
+depends = ["scrum"]
+fan_out = "{{ steps.scrum.next_targets[0].skills }}"
+args    = { target = "{{ item }}", mode = "solve" }

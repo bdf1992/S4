@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/scrum_output.json",
+  "title": "scrum_output",
+  "description": "Structured sidecar emitted by tools.standup --emit-structured. Stable contract surface for heartbeat substitution: {{ steps.<id>.<field> }} resolves against this shape. Schema_version 0.1 — additions allowed without bump; field removals or type changes require bump.",
+  "type": "object",
+  "required": [
+    "schema_version", "mode", "window", "branch",
+    "floor_ratio", "by_regime", "commits_count",
+    "open_proposals", "source_state"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string"},
+    "mode": {"enum": ["standup", "scrum"]},
+    "window": {
+      "type": "object",
+      "required": ["since_iso", "until_iso"],
+      "additionalProperties": false,
+      "properties": {
+        "since_iso": {"type": "string"},
+        "until_iso": {"type": "string"}
+      }
+    },
+    "branch": {"type": "string"},
+    "dirty_count": {"type": "integer", "minimum": 0},
+    "dirty_files": {"type": "array", "items": {"type": "string"}},
+    "floor_ratio": {"type": "number"},
+    "floor_total": {"type": "integer", "minimum": 0},
+    "by_regime": {
+      "type": "object",
+      "additionalProperties": {"type": "integer", "minimum": 0}
+    },
+    "commits_count": {"type": "integer", "minimum": 0},
+    "commits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sha", "iso", "subject"],
+        "additionalProperties": false,
+        "properties": {
+          "sha": {"type": "string"},
+          "iso": {"type": "string"},
+          "subject": {"type": "string"}
+        }
+      }
+    },
+    "cooks_count": {"type": "integer", "minimum": 0},
+    "cooks_landed": {"type": "array"},
+    "cooks_no_commit": {"type": "array"},
+    "open_proposals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["proposal_id", "target", "claimed_kind", "dir"],
+        "properties": {
+          "proposal_id": {"type": "string"},
+          "target": {"type": "string"},
+          "claimed_kind": {"type": "string"},
+          "dir": {"type": "string"}
+        }
+      }
+    },
+    "decisions": {"type": "array"},
+    "meeting_notes": {"type": "array", "items": {"type": "string"}},
+    "verifier_failures": {"type": "array"},
+    "next_targets": {
+      "description": "scrum-only. List of leverage-ranked candidate buckets, each with skill names. fan_out targets read this.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "rule_text", "skills"],
+        "additionalProperties": false,
+        "properties": {
+          "rule_id": {"type": "string"},
+          "rule_text": {"type": "string"},
+          "skills": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "source_state": {
+      "type": "object",
+      "required": ["floor", "cook_outcome"],
+      "properties": {
+        "floor": {"type": "string"},
+        "cook_outcome": {"type": "string"},
+        "floor_growth": {"type": "string"}
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/cook_output.json",
+  "title": "cook_output",
+  "description": "Structured sidecar emitted by a dispatched cook subagent (or by tools.cook_session.record_session() in shadow-design). Stable contract surface for chained substitution and aggregation.",
+  "type": "object",
+  "required": [
+    "schema_version", "ritual_id", "session_id", "target",
+    "mode", "started_at", "git_head_at_record"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string"},
+    "ritual_id": {"const": "ritual:cook"},
+    "session_id": {"type": "string", "minLength": 8},
+    "target": {"type": "string"},
+    "mode": {"enum": ["solve", "concept"]},
+    "surface": {"enum": ["agent-subagent", "scheduled-remote", "loop"]},
+    "started_at": {"type": "string"},
+    "ended_at": {"type": "string"},
+    "commits_landed": {"type": "array", "items": {"type": "string"}},
+    "net_loc": {"type": "integer"},
+    "files_touched": {"type": "integer", "minimum": 0},
+    "showcase": {"type": "string"},
+    "exit_code": {"type": "integer"},
+    "git_head_at_record": {"type": "string"}
+  }
+}

@@ -385,6 +385,120 @@ def _render_iteration_lens(floor: dict, fg_points: list[dict]) -> list[str]:
     return lines
 
 
+def _collect_structured(mode: str, since: _dt.datetime,
+                        until: _dt.datetime) -> dict:
+    """Same source-walk as render(), emitting a structured dict instead of
+    markdown. The dict is the contract surface heartbeat configs reference
+    via {{ steps.<id>.<field> }} substitution. Schema at
+    schemas/scrum_output.json."""
+    branch, dirty = _git_status_short()
+    floor = _floor_signal()
+    commits = _commits_in_window(since, until)
+    cooks = _cook_outcomes_in_window(since, until)
+    opens = _open_proposals()
+    decisions = _decisions_in_window(since, until)
+    meetings = _meeting_notes_in_window(since)
+    checks = _verify_check_summary()
+
+    out = {
+        "schema_version": "0.1",
+        "mode": mode,
+        "window": {"since_iso": since.isoformat(),
+                   "until_iso": until.isoformat()},
+        "branch": branch,
+        "dirty_count": len(dirty),
+        "dirty_files": dirty,
+        "floor_ratio": floor["floor_ratio"],
+        "floor_total": floor["total"],
+        "by_regime": floor["by_regime"],
+        "commits_count": len(commits),
+        "commits": commits,
+        "cooks_count": len(cooks),
+        "cooks_landed": [c for c in cooks if c["commits_count"] > 0],
+        "cooks_no_commit": [c for c in cooks if c["commits_count"] == 0],
+        "open_proposals": opens,
+        "decisions": decisions,
+        "meeting_notes": meetings,
+        "verifier_failures": [
+            {"name": n, "exit": c, "first_line": m}
+            for (n, c, m) in checks if c != 0
+        ],
+        "source_state": {
+            "floor": floor["source_state"],
+            "cook_outcome": _co.compute_source_state(),
+        },
+    }
+    if mode == "scrum":
+        ss_fg = _fg.compute_source_state()
+        fg_points = _fg.collect(ss_fg)
+        ranked = _fg._ranked(fg_points)
+        out["next_targets"] = [
+            {"rule_id": rid, "rule_text": rtxt, "skills": names}
+            for (rid, rtxt, names) in ranked
+        ]
+        out["source_state"]["floor_growth"] = ss_fg
+    return out
+
+
+def _git_head() -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(REPO), capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+
+def _last_receipt(receipt_dir: Path) -> dict | None:
+    """Return the most recent *.receipt.json under receipt_dir, or None."""
+    if not receipt_dir.is_dir():
+        return None
+    receipts = sorted(receipt_dir.glob("*.receipt.json"))
+    if not receipts:
+        return None
+    try:
+        return json.loads(receipts[-1].read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def heartbeat_gate(receipt_dir: str | Path,
+                   state: dict | None = None) -> bool:
+    """Default gate for scrum/standup heartbeats. Fires iff git HEAD has
+    moved since the last receipt at receipt_dir, OR (bootstrap) no prior
+    receipt exists. `state` is unused today; reserved for the runner to
+    pass extra context.
+
+    Closes GAP-14 from hand-play 002: receipt_dir is no longer hard-coded
+    to scrum's directory, so multiple rituals can share this function and
+    each walk their own receipts."""
+    rd = Path(receipt_dir)
+    if not rd.is_absolute():
+        rd = REPO / rd
+    last = _last_receipt(rd)
+    if last is None:
+        return True
+    last_head = last.get("git_head_at_fire")
+    if not last_head:
+        return True
+    return _git_head() != last_head
+
+
+def heartbeat_idempotency_key(receipt_dir: str | Path,
+                              state: dict | None = None) -> str:
+    """Closed-form idempotency key: git HEAD (12 chars) + the timestamp of
+    the most recent prior receipt at receipt_dir (or 'bootstrap' if none).
+    Two ticks at the same HEAD with no intervening receipt collapse to
+    one fire.
+
+    Closes GAP-14 from hand-play 002: ritual-agnostic via receipt_dir."""
+    rd = Path(receipt_dir)
+    if not rd.is_absolute():
+        rd = REPO / rd
+    head = _git_head()
+    last = _last_receipt(rd)
+    last_iso = (last or {}).get("fired_at", "bootstrap")
+    return f"{head[:12]}::{last_iso}"
+
+
 def render(mode: str, since: _dt.datetime, until: _dt.datetime) -> str:
     branch, dirty = _git_status_short()
     floor = _floor_signal()
@@ -427,6 +541,11 @@ def main() -> int:
         "--out", default=None,
         help="Write to this path instead of stdout.",
     )
+    ap.add_argument(
+        "--emit-structured", default=None,
+        help="Also write a JSON sidecar (heartbeat output_writer surface) "
+             "to this path. Schema: schemas/scrum_output.json.",
+    )
     args = ap.parse_args()
 
     now = _dt.datetime.now(_dt.timezone.utc).replace(microsecond=0)
@@ -443,6 +562,16 @@ def main() -> int:
         print(f"wrote {out_path.relative_to(REPO)}")
     else:
         sys.stdout.write(md)
+
+    if args.emit_structured:
+        sp = Path(args.emit_structured)
+        if not sp.is_absolute():
+            sp = REPO / sp
+        sp.parent.mkdir(parents=True, exist_ok=True)
+        structured = _collect_structured(args.mode, since, now)
+        sp.write_text(json.dumps(structured, indent=2, default=str),
+                      encoding="utf-8")
+        print(f"wrote {sp.relative_to(REPO)}")
     return 0
 
 

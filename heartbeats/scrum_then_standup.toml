@@ -1,0 +1,24 @@
+# Hand-play 002 config — two-step ritual chain with parameter substitution.
+# Tests: depends DAG, {{ steps.<id>.<field> }} substitution from a structured
+# sidecar, no fan_out (that's hand-play 003).
+#
+# scrum runs first (default 7d window).
+# standup runs next, with --since interpolated from scrum's structured output —
+# specifically, scrum's window.until_iso becomes standup's window start, so
+# standup covers the *unobserved tail* between scrum's emission and now.
+# (For a same-tick chain this is degenerate; for a cron chain it would be
+# the interval between scrum's daily fire and standup's hourly fire.)
+
+schedule = "operator-triggered"
+surface  = "agent-subagent"
+loop     = false
+
+[[step]]
+id    = "scrum"
+skill = "scrum"
+
+[[step]]
+id      = "standup"
+skill   = "standup"
+depends = ["scrum"]
+args    = { since = "{{ steps.scrum.window.until_iso }}" }
