@@ -24,6 +24,10 @@ skills/regime_audit/outputs/
 # Boards datasets are computed from source by collectors; same policy.
 boards/datasets/
 
+# Heartbeat receipts are runtime fire-events; regenerable, not source.
+# (Hand-played traces under traces/ ARE source — referenced from proposals.)
+heartbeats/receipts/
+
 # Foundations are hardcoded after move 1; this is just python hygiene
 __pycache__/
 *.pyc
