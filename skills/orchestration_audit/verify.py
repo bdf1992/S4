@@ -22,6 +22,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from skills.leash_for_hooks.collectors import llm_sdk_denylist
 from skills.orchestration_audit.lib import data_point as dp
 from skills.orchestration_audit.collectors import (
     orchestration_activations as oa,
@@ -49,8 +50,12 @@ REQUIRED_DATA = (
     "datasets/pfsm_parameters.jsonl",
     "probes/trace_conformity_probes.json",
 )
-LLM_DENY = ("anthropic", "openai", "google.generativeai", "cohere")
 NONDET_DENY = ("random", "uuid", "secrets")
+
+
+def _llm_deny() -> tuple[str, ...]:
+    ss = llm_sdk_denylist.compute_source_state()
+    return tuple(d["value"]["sdk_name"] for d in llm_sdk_denylist.collect(ss))
 
 
 def _cp() -> dict:
@@ -66,7 +71,7 @@ def _check(check_id: str, ok: bool, reason: str) -> tuple[str, str, str]:
     return (check_id, "pass" if ok else "fail", reason)
 
 
-def _audit_py(rel: str) -> list[tuple[str, str, str]]:
+def _audit_py(rel: str, llm_deny: tuple[str, ...]) -> list[tuple[str, str, str]]:
     p = SKILL / rel
     if not p.is_file():
         return [_check(f"{rel}_present", False, "missing")]
@@ -81,7 +86,7 @@ def _audit_py(rel: str) -> list[tuple[str, str, str]]:
             imps.extend(a.name for a in n.names)
         elif isinstance(n, ast.ImportFrom) and n.module:
             imps.append(n.module)
-    llm_hit = next((m for m in imps for b in LLM_DENY if m == b or m.startswith(b + ".")), None)
+    llm_hit = next((m for m in imps for b in llm_deny if m == b or m.startswith(b + ".")), None)
     nd_hit = next((m for m in imps for b in NONDET_DENY if m == b or m.startswith(b + ".")), None)
     return [
         _check(f"{rel}_present", True, "exists"),
@@ -112,27 +117,9 @@ def _check_probes() -> list[tuple[str, str, str]]:
     if not pf.is_file():
         return [_check("probes_present", False, "missing")]
     out: list[tuple[str, str, str]] = [_check("probes_present", True, "exists")]
-    spec = json.loads(pf.read_text(encoding="utf-8"))
-    for p in spec["probes"]:
-        r = tc.evaluate(p["trace"])
-        e = p["expected"]
-        reasons: list[str] = []
-        if "verdict_in" in e and r["verdict"] not in e["verdict_in"]:
-            reasons.append(f"verdict={r['verdict']}")
-        if "verdict_not_in" in e and r["verdict"] in e["verdict_not_in"]:
-            reasons.append(f"verdict_forbidden={r['verdict']}")
-        if "top_class" in e and r.get("top_class") != e["top_class"]:
-            reasons.append(f"top={r.get('top_class')}")
-        if "confidence_min" in e and r["confidence"] < e["confidence_min"]:
-            reasons.append(f"conf<{e['confidence_min']}")
-        if "confidence_max" in e and r["confidence"] > e["confidence_max"]:
-            reasons.append(f"conf>{e['confidence_max']}")
-        if "gap_record_must_contain" in e:
-            gr = r.get("gap_record", {})
-            for k in e["gap_record_must_contain"]:
-                if k not in gr:
-                    reasons.append(f"gap_missing:{k}")
-        out.append(_check(f"probe:{p['probe_id']}", not reasons, "ok" if not reasons else ";".join(reasons)))
+    for r in tc.run_probes():
+        out.append(_check(f"probe:{r['probe_id']}", r["pass"],
+                          "ok" if r["pass"] else ";".join(r["reasons"])))
     return out
 
 
@@ -156,8 +143,9 @@ def collect(source_state: str) -> list[dict]:
     checks: list[tuple[str, str, str]] = []
     checks.append(_check("skill_md_present", (SKILL / "SKILL.md").is_file(), "exists"))
     checks.append(_check("design_doc_present", (SKILL / "0_2_design.md").is_file(), "exists"))
+    llm_deny = _llm_deny()
     for rel in REQUIRED_PY:
-        checks.extend(_audit_py(rel))
+        checks.extend(_audit_py(rel, llm_deny))
     for rel in REQUIRED_DATA:
         checks.append(_check(f"{rel.split('/')[-1]}_present",
                              (SKILL / rel).is_file(),

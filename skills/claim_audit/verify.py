@@ -25,6 +25,7 @@ if __package__ in (None, ""):
 from skills.claim_audit.collectors import markdown_claims
 from skills.claim_audit.lib import audit, collection_program as cp, data_point as dp
 from skills.claim_audit.signals import claim_health
+from skills.leash_for_hooks.collectors import llm_sdk_denylist
 
 COLLECTOR_ID = "verify"
 KIND = "bundle_self_check"
@@ -64,13 +65,8 @@ def compute_source_state() -> str:
 
 
 def _denylist_set() -> frozenset[str]:
-    src = SKILL.parents[1] / "foundations" / "llm-sdk-denylist.txt"
-    out: set[str] = set()
-    for raw in src.read_text(encoding="utf-8").splitlines():
-        s = raw.strip()
-        if s and not s.startswith("#"):
-            out.add(s)
-    return frozenset(out)
+    ss = llm_sdk_denylist.compute_source_state()
+    return frozenset(d["value"]["sdk_name"] for d in llm_sdk_denylist.collect(ss))
 
 
 def _check_collectors(denylist: frozenset[str]) -> list[dict]:

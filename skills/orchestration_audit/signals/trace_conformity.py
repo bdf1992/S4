@@ -22,10 +22,15 @@ import json
 import math
 from pathlib import Path
 
+SIGNAL_ID = "trace_conformity"
+TRAINING_DATASET_KIND = "pfsm_parameters"
+VERDICT_ENUM = ("ready", "not_ready", "inconclusive")
+
 REPO = Path(__file__).resolve().parents[3]
 PARAMS = REPO / "skills" / "orchestration_audit" / "datasets" / "pfsm_parameters.jsonl"
 ACTIVATIONS = REPO / "skills" / "orchestration_audit" / "datasets" / "orchestration_activations.jsonl"
 HONESTY = REPO / "skills" / "orchestration_audit" / "datasets" / "decision_point_honesty.jsonl"
+PROBES_POINTER = REPO / "skills" / "orchestration_audit" / "probes" / "trace_conformity_probes.json"
 
 READY_THRESHOLD = 0.5
 UNIFORM_TOLERANCE = 0.05  # if max softmax prob is within this of uniform, treat as not_ready
@@ -142,4 +147,52 @@ def evaluate(trace: list[dict]) -> dict:
     }
     if verdict != "ready":
         out["gap_record"] = _gap_record(params, trace)
+    return out
+
+
+def _check_envelope(actual: dict, expected: dict) -> list[str]:
+    reasons: list[str] = []
+    if "verdict_in" in expected and actual["verdict"] not in expected["verdict_in"]:
+        reasons.append(f"verdict={actual['verdict']}")
+    if "verdict_not_in" in expected and actual["verdict"] in expected["verdict_not_in"]:
+        reasons.append(f"verdict_forbidden={actual['verdict']}")
+    if "top_class" in expected and actual.get("top_class") != expected["top_class"]:
+        reasons.append(f"top={actual.get('top_class')}")
+    if "confidence_min" in expected and actual["confidence"] < expected["confidence_min"]:
+        reasons.append(f"conf<{expected['confidence_min']}")
+    if "confidence_max" in expected and actual["confidence"] > expected["confidence_max"]:
+        reasons.append(f"conf>{expected['confidence_max']}")
+    if "gap_record_must_contain" in expected:
+        gr = actual.get("gap_record") or {}
+        for k in expected["gap_record_must_contain"]:
+            if k not in gr:
+                reasons.append(f"gap_missing:{k}")
+    return reasons
+
+
+def run_probes() -> list[dict]:
+    """Run the declared probe set against evaluate(); return per-probe pass/fail.
+
+    Same shape as the run_probes() entry point on every other 0.2 signal in
+    the experiment, so a peer 3.0 importer can verify fit-time behavior
+    holds without reaching into a per-skill verify.py.
+    """
+    if not PROBES_POINTER.is_file():
+        return [{"probe_id": "_pointer", "pass": False,
+                 "reasons": [f"probes_missing:{PROBES_POINTER}"],
+                 "expected": None, "actual": None}]
+    spec = json.loads(PROBES_POINTER.read_text(encoding="utf-8"))
+    out: list[dict] = []
+    for p in spec["probes"]:
+        actual = evaluate(p["trace"])
+        reasons = _check_envelope(actual, p["expected"])
+        out.append({
+            "probe_id": p["probe_id"],
+            "expected": p["expected"],
+            "actual": {"verdict": actual["verdict"],
+                       "confidence": actual["confidence"],
+                       "top_class": actual.get("top_class")},
+            "pass": not reasons,
+            "reasons": reasons,
+        })
     return out
