@@ -69,6 +69,144 @@ def _sparkline(values: list[float], *, width: int = 220, height: int = 44) -> st
     )
 
 
+def _epoch_seconds(iso: str) -> float:
+    """ISO 8601 with offset -> seconds since 1970-01-01 (no clock read).
+
+    Used to space CFD x-coordinates by elapsed time, not by event index, so
+    bursts of same-day events don't collapse to a single visual tick.
+    """
+    try:
+        return _dt.datetime.fromisoformat(iso).timestamp()
+    except ValueError:
+        return 0.0
+
+
+def _cfd_svg(
+    series: list[dict],
+    *,
+    width: int = 720,
+    height: int = 160,
+    pad_l: int = 32,
+    pad_r: int = 96,
+    pad_t: int = 12,
+    pad_b: int = 22,
+) -> str:
+    """Stacked-area Cumulative Flow Diagram. Inline SVG, no JS, no external assets.
+
+    Three bands, bottom-up: rejected, promoted, proposed-still-awaiting.
+    X = elapsed time across the event window. Y = cumulative count.
+
+    The width of the top (proposed) band at any x is the work-in-progress
+    count at that instant — the canonical CFD reading.
+    """
+    if not series:
+        return ""
+    if len(series) == 1:
+        zero = {"at": series[0]["at"], "proposed": 0, "promoted": 0, "rejected": 0, "total": 0}
+        series = [zero, series[0]]
+    n = len(series)
+    plot_w = width - pad_l - pad_r
+    plot_h = height - pad_t - pad_b
+    xs = [_epoch_seconds(s["at"]) for s in series]
+    x_lo, x_hi = xs[0], xs[-1]
+    x_rng = (x_hi - x_lo) or 1.0
+    max_total = max(s["total"] for s in series) or 1
+
+    def x_at(i: int) -> float:
+        return pad_l + ((xs[i] - x_lo) / x_rng) * plot_w
+
+    def y_at(v: float) -> float:
+        return pad_t + plot_h - (v / max_total) * plot_h
+
+    # Bottom-up so each successive band's bottom = previous band's top.
+    layers = [
+        ("rejected", "var(--cfd-reject)"),
+        ("promoted", "var(--cfd-promote)"),
+        ("proposed", "var(--cfd-await)"),
+    ]
+    bands: list[str] = []
+    cum_below = [0] * n
+    for key, color in layers:
+        tops = [cum_below[i] + series[i][key] for i in range(n)]
+        pts = [f"{x_at(i):.1f},{y_at(tops[i]):.1f}" for i in range(n)]
+        pts += [f"{x_at(i):.1f},{y_at(cum_below[i]):.1f}" for i in reversed(range(n))]
+        bands.append(
+            f'<polygon fill="{color}" fill-opacity="0.85" stroke="{color}" '
+            f'stroke-opacity="0.6" stroke-width="1" points="{" ".join(pts)}"/>'
+        )
+        cum_below = tops
+
+    x0_lbl = series[0]["at"][:10]
+    xn_lbl = series[-1]["at"][:10]
+    latest = series[-1]
+    legend_y0 = pad_t + 10
+
+    legend_rows = [
+        ("proposed", "var(--cfd-await)", "still awaiting", latest["proposed"]),
+        ("promoted", "var(--cfd-promote)", "promoted", latest["promoted"]),
+        ("rejected", "var(--cfd-reject)", "rejected", latest["rejected"]),
+    ]
+    legend_svg = []
+    for i, (_, color, label, count) in enumerate(legend_rows):
+        ly = legend_y0 + i * 18
+        legend_svg.append(
+            f'<rect x="{width - pad_r + 8}" y="{ly - 9}" width="11" height="11" '
+            f'fill="{color}" fill-opacity="0.85"/>'
+            f'<text x="{width - pad_r + 24}" y="{ly}" font-size="11" '
+            f'fill="var(--text)">{_h(label)} '
+            f'<tspan fill="var(--muted)" font-variant-numeric="tabular-nums">{count}</tspan></text>'
+        )
+
+    return (
+        f'<svg width="{width}" height="{height}" viewBox="0 0 {width} {height}" '
+        f'class="cfd-svg" role="img" aria-label="proposal flow over time">'
+        f'<line x1="{pad_l}" y1="{pad_t + plot_h}" x2="{pad_l + plot_w}" '
+        f'y2="{pad_t + plot_h}" stroke="var(--border)" stroke-width="1"/>'
+        f'<line x1="{pad_l}" y1="{pad_t}" x2="{pad_l}" y2="{pad_t + plot_h}" '
+        f'stroke="var(--border)" stroke-width="1"/>'
+        + "".join(bands)
+        + f'<text x="{pad_l - 6}" y="{pad_t + 8}" font-size="10" '
+          f'fill="var(--muted)" text-anchor="end" '
+          f'font-variant-numeric="tabular-nums">{max_total}</text>'
+        + f'<text x="{pad_l - 6}" y="{pad_t + plot_h}" font-size="10" '
+          f'fill="var(--muted)" text-anchor="end">0</text>'
+        + f'<text x="{pad_l}" y="{height - 6}" font-size="10" '
+          f'fill="var(--muted)">{_h(x0_lbl)}</text>'
+        + f'<text x="{pad_l + plot_w}" y="{height - 6}" font-size="10" '
+          f'fill="var(--muted)" text-anchor="end">{_h(xn_lbl)}</text>'
+        + "".join(legend_svg)
+        + '</svg>'
+    )
+
+
+def _proposal_flow_panel(snap: dict) -> str:
+    series = snap.get("proposal_flow") or []
+    if not series:
+        return ""
+    latest = series[-1]
+    summary = (
+        f'{latest["total"]} proposals filed · '
+        f'{latest["promoted"]} promoted · '
+        f'{latest["rejected"]} rejected · '
+        f'{latest["proposed"]} still awaiting'
+    )
+    return (
+        '<div class="cfd-panel">'
+        '<div class="cfd-title">Proposal flow over time '
+        '<span class="muted small">— cumulative kanban view (CFD)</span></div>'
+        f'<div class="cfd-svg-wrap">{_cfd_svg(series)}</div>'
+        f'<div class="cfd-summary muted small">{_h(summary)}</div>'
+        '<div class="cfd-legend muted small">'
+        'Stacked bottom-up: rejected, promoted, still-awaiting. The width of the top band '
+        'at any x is the work-in-progress count — the gap between bottom and top is total '
+        'proposals filed by that instant. Right edge is the latest event in '
+        f'{_link("approvals/decisions.jsonl")}; left edge is the earliest '
+        '<code>prop:YYYY-MM-DD:</code> datestamp seen under '
+        f'{_link("proposals/", "proposals/")}.</div>'
+        '</div>'
+    )
+
+
 # ---------- sections ----------
 
 
@@ -270,9 +408,11 @@ def _authorize_panel(p: dict) -> str:
 
 def _pending_decisions_section(snap: dict) -> str:
     pending = snap.get("pending_decisions", []) or []
+    flow_panel = _proposal_flow_panel(snap)
     if not pending:
         return (
             '<section><h2>Awaiting your decision</h2>'
+            + flow_panel +
             '<p class="muted">No proposals are waiting on the operator. '
             'Drafts and design-previews live under '
             f'{_link("proposals/", "proposals/")} and surface here once they have '
@@ -332,6 +472,7 @@ def _pending_decisions_section(snap: dict) -> str:
         'panels are the comprehension layer, the last three are the evidence layer.'
         '</p>'
         '</div>'
+        + flow_panel
         + "\n".join(cards)
         + '</section>'
     )
@@ -370,13 +511,14 @@ def _bedrock_section(snap: dict) -> str:
 def _floor_section(snap: dict) -> str:
     history = _snap._audit_history()
     audit = snap.get("audit", {})
-    fr = audit.get("latest_floor_ratio")
-    by_regime = audit.get("latest_by_regime", {})
+    fr = audit.get("live_floor_ratio")
+    by_regime = audit.get("live_by_regime") or {}
     n = audit.get("bundle_count", 0)
+    archived_fr = audit.get("latest_floor_ratio")
     if fr is None:
         return ('<section><h2>Floor ratio</h2>'
-                '<p class="muted">No audit bundles yet — run '
-                '<code>python -m skills.regime_audit.orchestrate</code>.</p></section>')
+                '<p class="muted">No regime data — '
+                '<code>regime_distribution</code> signal returned empty.</p></section>')
 
     fr_str = f"{fr:.3f}"
     first = audit.get("first_floor_ratio")
@@ -423,15 +565,25 @@ def _floor_section(snap: dict) -> str:
 
     latest_bid = audit.get("latest_bundle_id", "")
     latest_link = _link(f"skills/regime_audit/outputs/{latest_bid}/stats.json", latest_bid) if latest_bid else ""
+    drift_html = ""
+    if isinstance(archived_fr, (int, float)) and isinstance(fr, (int, float)) and latest_link:
+        drift = fr - archived_fr
+        drift_word = "matches" if abs(drift) < 0.0005 else f"{drift:+.3f} vs"
+        drift_html = (
+            f'<div class="muted small">live {drift_word} archive '
+            f'({archived_fr:.3f} at {latest_link})</div>'
+        )
+    signal_link = _link("skills/regime_audit/signals/regime_distribution.py", "regime_distribution")
 
     return (
         '<section><h2>Floor ratio</h2>'
         '<div class="floor-row">'
           '<div class="floor-headline">'
             f'<div class="big-number">{_h(fr_str)}</div>'
-            '<div class="muted">latest floor_ratio</div>'
+            '<div class="muted">live floor_ratio</div>'
             f'{direction_html}'
-            f'<div class="muted small">source: {latest_link}</div>'
+            f'<div class="muted small">source: {signal_link} on current source</div>'
+            f'{drift_html}'
           '</div>'
           f'<div class="spark-wrap">{spark}</div>'
           '<div class="regime-wrap">'
@@ -513,10 +665,157 @@ def _leashes_section(snap: dict) -> str:
     )
 
 
-def _skills_regime_section(snap: dict) -> str:
-    by_skill = snap.get("audit", {}).get("latest_by_skill", {})
+_FG_STATUS_KIND = {
+    "graduated": "healthy",
+    "candidate": "scoped",
+    "isolated": "attention",
+    "no_structure": "attention",
+}
+
+
+def _floor_growth_section(snap: dict) -> str:
+    fg = snap.get("floor_growth") or {}
+    by_skill = fg.get("by_skill") or {}
+    counts = fg.get("counts") or {}
+    ranked = fg.get("ranked") or []
     if not by_skill:
-        return '<section><h2>Skills — regime distribution</h2><p class="muted">No audit data.</p></section>'
+        return ('<section><h2>Floor growth</h2>'
+                '<p class="muted">No floor-growth data — '
+                '<code>tools.floor_growth.collect()</code> returned empty.</p></section>')
+
+    rows = []
+    for name in sorted(by_skill):
+        v = by_skill[name]
+        status = v.get("status") or "?"
+        kind = _FG_STATUS_KIND.get(status, "muted")
+        importers = v.get("importers") or []
+        if importers:
+            shown = ", ".join(
+                _link(i["importer"], i["importer"]) +
+                (f" <span class='muted small'>·{_h(i['submodule'])}</span>" if i.get("submodule") else "")
+                for i in importers[:3]
+            )
+            if len(importers) > 3:
+                shown += f' <span class="muted small">+{len(importers) - 3}</span>'
+        else:
+            shown = '<span class="muted">none</span>'
+        rows.append(
+            f"<tr><td><code>{_h(name)}</code></td>"
+            f"<td>{_badge(status, kind)}</td>"
+            f"<td>{'yes' if v.get('verifier_present') else 'no'}</td>"
+            f"<td>{'yes' if v.get('lib_consumed') else 'no'}</td>"
+            f"<td>{'yes' if v.get('signals_consumed') else 'no'}</td>"
+            f"<td class='num'>{v.get('importer_count', 0)}</td>"
+            f"<td>{shown}</td></tr>"
+        )
+
+    rule_panels = []
+    for r in ranked:
+        skills_html = "".join(f"<li><code>{_h(s)}</code></li>" for s in r["skills"])
+        rule_panels.append(
+            '<div class="panel fg-rule-panel">'
+            f'<div class="panel-title">{_h(r["rule_id"])} '
+            f'<span class="muted small">({len(r["skills"])})</span></div>'
+            f'<div class="rule-text muted small">{_h(r["rule_text"])}</div>'
+            f'<ul class="fg-skill-list">{skills_html}</ul>'
+            '</div>'
+        )
+
+    counts_summary = (
+        f'graduated {counts.get("graduated", 0)} · '
+        f'candidate {counts.get("candidate", 0)} · '
+        f'isolated {counts.get("isolated", 0)} · '
+        f'no_structure {counts.get("no_structure", 0)}'
+    )
+
+    return (
+        '<section><h2>Floor growth — peer consumption</h2>'
+        f'<div class="muted small fg-summary">{_h(counts_summary)} · '
+        f'source: {_link("tools/floor_growth.py")}</div>'
+        '<table><thead><tr>'
+        '<th>Skill</th><th>Status</th><th>Verifier</th><th>Lib used</th>'
+        '<th>Signals used</th><th>Imp.</th><th>Importers</th>'
+        '</tr></thead><tbody>'
+        + "\n".join(rows)
+        + '</tbody></table>'
+        + ('<div class="fg-ranked">' + "\n".join(rule_panels) + '</div>' if rule_panels else "")
+        + '<p class="muted small">A skill graduates 0.0 → real-3.0 only when peer 3.0 software '
+          'consumes it (CLAUDE.md §"four-rung graduation"). The ranked panels are '
+          '<code>tools.floor_growth.LEVERAGE_RULES</code> applied to the table above — the '
+          'top bucket is the highest-leverage place to spend a future cook.</p>'
+        '</section>'
+    )
+
+
+_CLAIM_VERDICT_KIND = {
+    "healthy": "healthy",
+    "degraded": "attention",
+    "no_data": "muted",
+}
+
+
+def _claim_health_section(snap: dict) -> str:
+    ch = snap.get("claim_health") or {}
+    if not ch:
+        return ('<section><h2>Claim health</h2>'
+                '<p class="muted">No claim_health observation in snapshot.</p></section>')
+    verdict = ch.get("verdict") or "?"
+    lr = ch.get("live_ratio")
+    lr_str = f"{lr:.3f}" if isinstance(lr, (int, float)) else "—"
+    threshold = ch.get("degraded_threshold")
+    th_str = f"{threshold:.2f}" if isinstance(threshold, (int, float)) else "0.95"
+    kind = _CLAIM_VERDICT_KIND.get(verdict, "muted")
+    summary_cells = (
+        f'<span class="ch-num">{ch.get("live", 0)}</span><span class="ch-lbl">live</span>'
+        f'<span class="ch-num">{ch.get("internal", 0)}</span><span class="ch-lbl">internal</span>'
+        f'<span class="ch-num">{ch.get("dangling", 0)}</span><span class="ch-lbl">dangling</span>'
+        f'<span class="ch-num">{ch.get("unverified_anchor", 0)}</span><span class="ch-lbl">anchor-unverified</span>'
+        f'<span class="ch-num">{ch.get("total", 0)}</span><span class="ch-lbl">total</span>'
+    )
+    rows = []
+    for d in ch.get("dangling_links") or []:
+        src = d["source"]
+        line = d["line"]
+        # Line-anchored link so the click jumps to the offending line.
+        src_html = _link(f"{src}#L{line}", f"{src}:{line}")
+        rows.append(
+            f"<tr><td>{src_html}</td>"
+            f"<td><code>{_h(d['target_raw'])}</code></td>"
+            f"<td>{_badge(d['receipt'], 'attention')}</td></tr>"
+        )
+    table_html = (
+        '<table><thead><tr>'
+        '<th>Source</th><th>Target (raw)</th><th>Receipt</th>'
+        '</tr></thead><tbody>'
+        + "\n".join(rows)
+        + '</tbody></table>'
+    ) if rows else '<p class="muted">No dangling internal claims.</p>'
+    return (
+        '<section><h2>Claim health <span class="muted small">— markdown pointers</span></h2>'
+        '<div class="claim-row">'
+        '<div class="claim-headline">'
+        f'<div class="big-number">{_h(lr_str)}</div>'
+        '<div class="muted">live_ratio</div>'
+        f'<div class="trend-meta">{_badge(verdict, kind)} '
+        f'<span class="muted small">threshold {_h(th_str)}</span></div>'
+        '<div class="muted small">'
+        f'source: {_link("skills/claim_audit/SKILL.md", "skills/claim_audit")}'
+        '</div></div>'
+        f'<div class="claim-summary">{summary_cells}</div>'
+        '</div>'
+        + table_html
+        + '<p class="muted small">live = pointer resolved against current source; '
+          'dangling = file or line missing; anchor-unverified = section anchor (punted '
+          'by construction). Surfaced via the sibling <code>claim_audit</code> skill — '
+          'first peer importer of its lib + signal.</p>'
+        '</section>'
+    )
+
+
+def _skills_regime_section(snap: dict) -> str:
+    by_skill = snap.get("audit", {}).get("live_by_skill") or {}
+    if not by_skill:
+        return '<section><h2>Skills — regime distribution</h2><p class="muted">No regime data.</p></section>'
     regimes = ["bedrock", "0.0", "0.1", "0.2", "0.3", "unclassified"]
     rows = []
     for skill in sorted(by_skill):
@@ -569,6 +868,9 @@ CSS = """
   --scoped-bg: #3a2c10;
   --scoped-fg: #fde68a;
   --code-bg: #1d2a47;
+  --cfd-await: #fde68a;
+  --cfd-promote: #6ee7b7;
+  --cfd-reject: #fda4af;
 }
 * { box-sizing: border-box; }
 body {
@@ -702,6 +1004,50 @@ table.checks td:first-child { width: 64px; }
 .auth-btn.reject { background: var(--attention-bg); color: var(--attention-fg); border-color: var(--attention-fg); }
 .auth-btn[disabled] { opacity: 0.55; }
 .auth-note { line-height: 1.5; }
+
+/* floor-growth section — peer consumption */
+.fg-summary { margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.fg-ranked {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px; margin-top: 12px;
+}
+.fg-rule-panel { margin: 0; }
+.fg-rule-panel .panel-title { color: var(--accent); }
+.fg-rule-panel .rule-text { margin-bottom: 6px; }
+.fg-skill-list { margin: 0; padding-left: 20px; }
+.fg-skill-list li { font-size: 13px; line-height: 1.6; }
+
+/* claim-health section — markdown pointer audit */
+.claim-row {
+  display: grid; grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 24px; align-items: center; padding: 16px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; margin-bottom: 12px;
+}
+.claim-summary {
+  display: grid; grid-template-columns: repeat(5, auto);
+  column-gap: 18px; row-gap: 2px; align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+.claim-summary .ch-num {
+  font-size: 18px; font-weight: 600; color: var(--text);
+  text-align: right;
+}
+.claim-summary .ch-lbl {
+  font-size: 11px; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.04em; text-align: left;
+}
+
+/* cumulative flow diagram (CFD) panel — proposals over time */
+.cfd-panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 6px; padding: 14px 16px; margin: 0 0 14px;
+}
+.cfd-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.cfd-svg-wrap { display: flex; justify-content: center; }
+.cfd-svg { max-width: 100%; height: auto; }
+.cfd-summary { margin-top: 10px; font-variant-numeric: tabular-nums; }
+.cfd-legend { margin-top: 4px; line-height: 1.55; }
 """
 
 
@@ -725,6 +1071,8 @@ def render_html(snap: dict) -> str:
         _floor_section(snap),
         _boards_section(snap),
         _leashes_section(snap),
+        _floor_growth_section(snap),
+        _claim_health_section(snap),
         _skills_regime_section(snap),
         '<p class="legend">'
         'Source links use the <code>vscode://file/</code> protocol. '

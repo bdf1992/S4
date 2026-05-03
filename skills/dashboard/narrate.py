@@ -6,6 +6,8 @@ skills/dashboard/outputs/run-*/. Emits prose paragraphs covering:
   - Floor (floor_ratio movement, new 0.1/0.2/0.3 components since last snapshot)
   - Boards (which boards moved; which load-bearing items closed/opened)
   - Leashes (toggle changes, exemplar promotion movement)
+  - Floor growth (peer-consumption status, isolates that graduated)
+  - Claim health (markdown-pointer live_ratio, new and resolved dangling claims)
   - Bedrock (any spec hash changed since last snapshot)
   - What likely needs attention next (rule-based, not LLM-generated)
 
@@ -72,34 +74,38 @@ def _regime_delta(prev_by_regime: dict, cur_by_regime: dict) -> dict[str, int]:
 
 def _section_floor(cur: dict, prev: dict | None) -> list[str]:
     cur_audit = cur.get("audit", {})
-    cur_fr = cur_audit.get("latest_floor_ratio")
+    cur_fr = cur_audit.get("live_floor_ratio")
     bundle_n = cur_audit.get("bundle_count", 0)
     first_fr = cur_audit.get("first_floor_ratio")
+    archived_fr = cur_audit.get("latest_floor_ratio")
 
     lines = ["**Floor.**"]
     if cur_fr is None:
-        lines.append("No audit bundles yet — the regime distribution is unknown. Run `python -m skills.regime_audit.orchestrate`.")
+        lines.append("No regime data — `regime_distribution` signal returned empty. Check `skills/regime_audit/collectors/regime_classification.py`.")
         return lines
 
     fr_str = f"{cur_fr:.3f}"
     if first_fr is not None and bundle_n > 1:
         delta = cur_fr - first_fr
         direction = "growing" if delta > 0 else ("flat" if abs(delta) < 0.0005 else "shrinking")
-        lines.append(f"floor_ratio = {fr_str} after {bundle_n} audit runs ({first_fr:.3f} → {fr_str}, {direction}, {delta:+.3f}).")
+        lines.append(f"floor_ratio = {fr_str} (live), {first_fr:.3f} on first archive bundle of {bundle_n} ({direction}, {delta:+.3f}).")
     else:
-        lines.append(f"floor_ratio = {fr_str} (first audit; no trend yet).")
+        lines.append(f"floor_ratio = {fr_str} (live; no archive trend yet).")
+    if isinstance(archived_fr, (int, float)) and abs(cur_fr - archived_fr) >= 0.0005:
+        lines.append(f"Live diverges from last archive bundle: archive {archived_fr:.3f} → live {fr_str}{_delta_float(archived_fr, cur_fr)} (re-emit the audit bundle to refresh).")
 
     if prev:
         prev_audit = prev.get("audit", {})
-        prev_fr = prev_audit.get("latest_floor_ratio")
+        prev_fr = prev_audit.get("live_floor_ratio") or prev_audit.get("latest_floor_ratio")
         if prev_fr is not None and abs(cur_fr - prev_fr) >= 0.0005:
             lines.append(f"Since last snapshot: {prev_fr:.3f} → {fr_str}{_delta_float(prev_fr, cur_fr)}.")
         elif prev_fr is not None:
             lines.append(f"Unchanged since last snapshot ({prev_fr:.3f}).")
 
+        prev_by_regime = prev_audit.get("live_by_regime") or prev_audit.get("latest_by_regime", {})
         regime_d = _regime_delta(
-            prev_audit.get("latest_by_regime", {}),
-            cur_audit.get("latest_by_regime", {}),
+            prev_by_regime,
+            cur_audit.get("live_by_regime", {}),
         )
         if regime_d:
             parts = [f"{k} {v:+d}" for k, v in sorted(regime_d.items())]
@@ -204,6 +210,93 @@ def _section_bedrock(cur: dict, prev: dict | None) -> list[str]:
     return lines
 
 
+def _section_floor_growth(cur: dict, prev: dict | None) -> list[str]:
+    cur_fg = cur.get("floor_growth") or {}
+    by_skill_cur = cur_fg.get("by_skill") or {}
+    counts_cur = cur_fg.get("counts") or {}
+    if not by_skill_cur:
+        return ["**Floor growth.**", "No floor-growth data."]
+
+    lines = ["**Floor growth.**"]
+    summary = (
+        f"{counts_cur.get('graduated', 0)} graduated, "
+        f"{counts_cur.get('candidate', 0)} candidate, "
+        f"{counts_cur.get('isolated', 0)} isolated, "
+        f"{counts_cur.get('no_structure', 0)} no_structure "
+        f"(of {len(by_skill_cur)} skills)."
+    )
+    lines.append(f"Peer-consumption status: {summary}")
+
+    if prev:
+        prev_fg = prev.get("floor_growth") or {}
+        by_skill_prev = prev_fg.get("by_skill") or {}
+        moves: list[str] = []
+        for name in sorted(set(by_skill_cur) | set(by_skill_prev)):
+            cur_status = (by_skill_cur.get(name) or {}).get("status")
+            prev_status = (by_skill_prev.get(name) or {}).get("status")
+            if cur_status and prev_status and cur_status != prev_status:
+                moves.append(f"`{name}` {prev_status} → {cur_status}")
+            elif cur_status and not prev_status:
+                moves.append(f"`{name}` (new) {cur_status}")
+            elif prev_status and not cur_status:
+                moves.append(f"`{name}` removed (was {prev_status})")
+        if moves:
+            lines.append("Status moves since last snapshot: " + "; ".join(moves) + ".")
+
+    ranked = cur_fg.get("ranked") or []
+    if ranked:
+        top = ranked[0]
+        lines.append(
+            f"Highest-leverage bucket: **{top['rule_id']}** "
+            f"({len(top['skills'])} skill{'s' if len(top['skills']) != 1 else ''} — "
+            f"{', '.join('`' + s + '`' for s in top['skills'])})."
+        )
+    return lines
+
+
+def _section_claims(cur: dict, prev: dict | None) -> list[str]:
+    """Surface the markdown-pointer claim_health verdict and its delta."""
+    cur_ch = cur.get("claim_health") or {}
+    if not cur_ch:
+        return ["**Claim health.**", "No claim_health observation captured."]
+    verdict = cur_ch.get("verdict") or "?"
+    lr = cur_ch.get("live_ratio")
+    lr_str = f"{lr:.3f}" if isinstance(lr, (int, float)) else "—"
+    lines = ["**Claim health.**"]
+    lines.append(
+        f"verdict **{verdict}**, live_ratio = {lr_str} "
+        f"({cur_ch.get('live', 0)}/{cur_ch.get('internal', 0)} internal pointers live, "
+        f"{cur_ch.get('dangling', 0)} dangling, "
+        f"{cur_ch.get('unverified_anchor', 0)} anchor-unverified)."
+    )
+    prev_ch = (prev or {}).get("claim_health") or {}
+    if prev_ch:
+        prev_lr = prev_ch.get("live_ratio")
+        if (isinstance(prev_lr, (int, float)) and isinstance(lr, (int, float))
+                and abs(lr - prev_lr) >= 0.0005):
+            lines.append(f"Since last snapshot: {prev_lr:.3f} → {lr_str}{_delta_float(prev_lr, lr)}.")
+        prev_d = {(d["source"], d["line"], d["target_raw"])
+                  for d in prev_ch.get("dangling_links") or []}
+        cur_d = {(d["source"], d["line"], d["target_raw"])
+                 for d in cur_ch.get("dangling_links") or []}
+        new_dangling = sorted(cur_d - prev_d)
+        cleared = sorted(prev_d - cur_d)
+        if new_dangling:
+            lines.append(f"New dangling claims ({len(new_dangling)}):")
+            for src, line, tgt in new_dangling[:10]:
+                lines.append(f"  - `{src}:{line}` → `{tgt}`")
+        if cleared:
+            lines.append(f"Resolved since last snapshot ({len(cleared)}):")
+            for src, line, tgt in cleared[:10]:
+                lines.append(f"  - `{src}:{line}` → `{tgt}`")
+    elif cur_ch.get("dangling_links"):
+        top = cur_ch["dangling_links"][:5]
+        lines.append("Top dangling claims:")
+        for d in top:
+            lines.append(f"  - `{d['source']}:{d['line']}` → `{d['target_raw']}` [{d['receipt']}]")
+    return lines
+
+
 def _section_attention(cur: dict, prev: dict | None) -> list[str]:
     """Rule-based suggestions. No LLM — explicit conditions on snapshot fields."""
     suggestions: list[str] = []
@@ -229,23 +322,23 @@ def _section_attention(cur: dict, prev: dict | None) -> list[str]:
 
     # Rule 3: floor flat across recent runs
     audit = cur.get("audit", {})
-    by_regime = audit.get("latest_by_regime", {})
+    by_regime = audit.get("live_by_regime") or audit.get("latest_by_regime", {})
     n = audit.get("bundle_count", 0)
     fr_first = audit.get("first_floor_ratio")
-    fr_last = audit.get("latest_floor_ratio")
+    fr_live = audit.get("live_floor_ratio")
     if (
-        n >= 3 and isinstance(fr_first, (int, float)) and isinstance(fr_last, (int, float))
-        and abs(fr_last - fr_first) < 0.001
+        n >= 3 and isinstance(fr_first, (int, float)) and isinstance(fr_live, (int, float))
+        and abs(fr_live - fr_first) < 0.001
     ):
         suggestions.append(
-            f"Floor ratio is flat across {n} runs ({fr_last:.3f}). "
+            f"Floor ratio is flat across {n} archive runs (still {fr_live:.3f} live). "
             f"Substrate not growing — consider adding a 0.1 collector or 0.2 signal."
         )
 
     # Rule 4: 0.3 grew without 0.1 since last snapshot
     if prev:
         prev_audit = prev.get("audit", {})
-        prev_regime = prev_audit.get("latest_by_regime", {})
+        prev_regime = prev_audit.get("live_by_regime") or prev_audit.get("latest_by_regime", {})
         d3 = by_regime.get("0.3", 0) - prev_regime.get("0.3", 0)
         d1 = by_regime.get("0.1", 0) - prev_regime.get("0.1", 0)
         if d3 > 0 and d1 <= 0:
@@ -261,6 +354,30 @@ def _section_attention(cur: dict, prev: dict | None) -> list[str]:
                 f"`{name}` toggle is **off** — the agent is autonomous on that surface. "
                 f"Verify trust is established."
             )
+
+    # Rule 6: floor flat laterally — many isolates, no graduation
+    fg = cur.get("floor_growth") or {}
+    fg_counts = fg.get("counts") or {}
+    isolated_n = fg_counts.get("isolated", 0)
+    graduated_n = fg_counts.get("graduated", 0)
+    if isolated_n >= 3 and graduated_n == 0:
+        suggestions.append(
+            f"{isolated_n} skills are isolated (verifier present, zero peer importers) and "
+            f"none are graduated. Lateral compounding is stuck — write a peer skill that "
+            f"imports an isolated skill's lib or signals."
+        )
+
+    # Rule 7: claim_health degraded — internal markdown pointers are rotting
+    ch = cur.get("claim_health") or {}
+    if ch.get("verdict") == "degraded":
+        lr = ch.get("live_ratio")
+        threshold = ch.get("degraded_threshold") or 0.95
+        lr_str = f"{lr:.3f}" if isinstance(lr, (int, float)) else "?"
+        suggestions.append(
+            f"claim_health **degraded** — live_ratio {lr_str} is below {threshold:.2f}; "
+            f"{ch.get('dangling', 0)} internal markdown pointers are dangling. "
+            f"Run `python -m skills.claim_audit.orchestrate` for the full bundle."
+        )
 
     if not suggestions:
         return ["**What likely needs attention next.**", "Nothing flagged by the rule set."]
@@ -287,6 +404,8 @@ def narrate(cur: dict, prev: dict | None) -> str:
         _section_floor(cur, prev),
         _section_boards(cur, prev),
         _section_leashes(cur, prev),
+        _section_floor_growth(cur, prev),
+        _section_claims(cur, prev),
         _section_bedrock(cur, prev),
         _section_attention(cur, prev),
     ]

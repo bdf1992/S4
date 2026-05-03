@@ -24,6 +24,10 @@ sys.path.insert(0, str(REPO))
 
 from boards.adapters import all_boards  # noqa: E402
 from boards.lib import cards as cards_lib  # noqa: E402
+from skills.regime_audit.collectors import regime_classification as _ra_collect  # noqa: E402
+from skills.regime_audit.lib import bundles_history as _ra_history  # noqa: E402
+from skills.regime_audit.signals import regime_distribution as _ra_signal  # noqa: E402
+from tools import floor_growth as _fg  # noqa: E402
 
 OPEN_STATUSES = cards_lib.OPEN_STATUSES
 
@@ -55,27 +59,30 @@ def _file_observation(rel: str) -> dict:
 
 
 def _audit_history() -> list[dict]:
-    bundles_dir = REPO / "skills" / "regime_audit" / "outputs"
-    if not bundles_dir.is_dir():
-        return []
-    rows: list[dict] = []
-    for run_dir in sorted(bundles_dir.glob("run-*"), key=lambda p: p.stat().st_mtime):
-        stats_path = run_dir / "stats.json"
-        if not stats_path.exists():
-            continue
-        try:
-            data = json.loads(stats_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            continue
-        s = data.get("stats", {})
-        rows.append({
-            "bundle_id": run_dir.name,
-            "mtime": int(stats_path.stat().st_mtime),
-            "floor_ratio": s.get("floor_ratio"),
-            "by_regime": s.get("by_regime", {}),
-            "by_skill": s.get("by_skill", {}),
-        })
-    return rows
+    return _ra_history.bundles_history()
+
+
+def _audit_live() -> dict:
+    """Recompute regime distribution from current source state via the signal.
+
+    Persisted bundles in `outputs/run-*/stats.json` are observations-at-time:
+    accurate when emitted, frozen thereafter. The latest persisted bundle can
+    drift arbitrarily far from current source as files are added or
+    reclassified. This calls the regime_audit collector + signal directly so
+    the dashboard's "right now" surface tracks current state, not the most
+    recent run's state. Returns the same shape as a `bundles_history()` row
+    (sans `bundle_id` / `mtime`) plus `source_state` for delta diffing.
+    """
+    ss = _ra_collect.compute_source_state()
+    rows = _ra_collect.collect(ss)
+    fitted = _ra_signal.fit(rows)
+    return {
+        "source_state": ss,
+        "total": fitted["total"],
+        "floor_ratio": fitted["floor_ratio"],
+        "by_regime": fitted["by_regime"],
+        "by_skill": fitted["by_skill"],
+    }
 
 
 def _board_observations() -> dict[str, dict]:
@@ -175,6 +182,111 @@ def _resolve_target_skill(prop_dir: Path) -> str | None:
     return None
 
 
+def _norm_iso(s: str) -> str:
+    """Trailing 'Z' -> '+00:00' so identical UTC instants sort identically as strings."""
+    return s[:-1] + "+00:00" if s.endswith("Z") else s
+
+
+def _proposal_id_date(pid: str) -> str | None:
+    """proposal_id 'prop:YYYY-MM-DD:slug' -> 'YYYY-MM-DDT00:00:00+00:00' (start-of-day UTC).
+
+    The id's leading datestamp is the proposal's authoring day; we anchor its
+    'appeared' event there. Returns None if the format does not match.
+    """
+    parts = pid.split(":", 2)
+    if len(parts) < 3:
+        return None
+    raw = parts[1]
+    if len(raw) != 10 or raw[4] != "-" or raw[7] != "-":
+        return None
+    return raw + "T00:00:00+00:00"
+
+
+def _proposal_flow_events() -> list[dict]:
+    """Time-ordered events from proposals/ + approvals/decisions.jsonl.
+
+    Two event kinds:
+      - {at, kind: 'appeared', proposal_id} — derived from proposal_id datestamp.
+      - {at, kind: 'decided', proposal_id, verdict} — read from decisions.jsonl.
+
+    Tie-break: 'appeared' before 'decided' at the same instant so a same-day
+    decide-on-arrival still walks through the 'proposed' state for one boundary.
+    """
+    events: list[dict] = []
+    if PROPOSALS_DIR.is_dir():
+        for d in sorted(PROPOSALS_DIR.iterdir()):
+            if not d.is_dir():
+                continue
+            manifest = d / "proposal.json"
+            if not manifest.is_file():
+                continue
+            try:
+                prop = json.loads(manifest.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            pid = prop.get("proposal_id")
+            if not pid:
+                continue
+            at = _proposal_id_date(pid)
+            if not at:
+                continue
+            events.append({"at": at, "kind": "appeared", "proposal_id": pid})
+    if APPROVALS_PATH.is_file():
+        for line in APPROVALS_PATH.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            pid = rec.get("proposal_id")
+            verdict = rec.get("verdict")
+            at = rec.get("decided_at")
+            if pid and at and verdict in ("promote", "reject"):
+                events.append({
+                    "at": _norm_iso(at), "kind": "decided",
+                    "proposal_id": pid, "verdict": verdict,
+                })
+    events.sort(key=lambda e: (e["at"], 0 if e["kind"] == "appeared" else 1, e["proposal_id"]))
+    return events
+
+
+def _proposal_flow_series() -> list[dict]:
+    """Cumulative-flow time series, one row per event boundary.
+
+    Each row: {at, proposed, promoted, rejected, total}.
+      - proposed  = currently still awaiting a decision (work-in-progress band).
+      - promoted  = cumulative count of promote verdicts.
+      - rejected  = cumulative count of reject verdicts.
+      - total     = sum of the three (= every proposal that has ever appeared).
+
+    Same source state -> identical series. No clock reads, no random.
+    """
+    events = _proposal_flow_events()
+    if not events:
+        return []
+    state: dict[str, str] = {}
+    series: list[dict] = []
+    for e in events:
+        pid = e["proposal_id"]
+        if e["kind"] == "appeared" and pid not in state:
+            state[pid] = "proposed"
+        elif e["kind"] == "decided":
+            v = e["verdict"]
+            state[pid] = "promoted" if v == "promote" else "rejected"
+        cnts = {"proposed": 0, "promoted": 0, "rejected": 0}
+        for s in state.values():
+            cnts[s] += 1
+        series.append({
+            "at": e["at"],
+            "proposed": cnts["proposed"],
+            "promoted": cnts["promoted"],
+            "rejected": cnts["rejected"],
+            "total": sum(cnts.values()),
+        })
+    return series
+
+
 def _pending_decisions() -> list[dict]:
     if not PROPOSALS_DIR.is_dir():
         return []
@@ -249,12 +361,117 @@ def _pending_decisions() -> list[dict]:
     return out
 
 
+def _floor_growth_observation() -> dict:
+    """Per-skill peer-consumption status + ranked next-target candidates.
+
+    Calls tools.floor_growth.collect() — same data the operator sees from
+    `python -m tools.floor_growth --ranked` and at the top of `/cook`. The
+    ranking buckets are computed by walking _fg.LEVERAGE_RULES against the
+    collected per-skill values, so the dashboard surfaces the same leverage
+    judgement floor_growth itself emits.
+    """
+    source_state = _fg.compute_source_state()
+    points = _fg.collect(source_state)
+    by_skill: dict[str, dict] = {}
+    counts = {"graduated": 0, "candidate": 0, "isolated": 0, "no_structure": 0}
+    for p in points:
+        v = p["value"]
+        name = v["skill_name"]
+        importers = v["peer_importers"]
+        by_skill[name] = {
+            "status": v["status"],
+            "verifier_present": v["verifier_present"],
+            "lib_consumed": v["lib_consumed"],
+            "signals_consumed": v["signals_consumed"],
+            "collectors_consumed": v["collectors_consumed"],
+            "importer_count": len(importers),
+            "importers": importers,
+        }
+        if v["status"] in counts:
+            counts[v["status"]] += 1
+    ranked: list[dict] = []
+    used: set[str] = set()
+    for rule_id, rule_text, pred in _fg.LEVERAGE_RULES:
+        bucket: list[str] = []
+        for p in points:
+            v = p["value"]
+            if v["skill_name"] in used:
+                continue
+            if pred(v):
+                bucket.append(v["skill_name"])
+                used.add(v["skill_name"])
+        if bucket:
+            ranked.append({
+                "rule_id": rule_id,
+                "rule_text": rule_text,
+                "skills": sorted(bucket),
+            })
+    return {
+        "source_state": source_state,
+        "by_skill": by_skill,
+        "counts": counts,
+        "ranked": ranked,
+    }
+
+
+def _claim_health_observation() -> dict:
+    """Walk every markdown file via the sibling skill and surface its
+    `claim_health` signal. First peer importer of `skills.claim_audit`
+    (top of the `isolated_with_signals` bucket per
+    `tools.floor_growth.LEVERAGE_RULES`) — every other dashboard section
+    renders prose pointing at source via markdown links, and a renderer
+    that ships dangling pointers is the surface contradicting itself."""
+    from skills.claim_audit.collectors import markdown_claims
+    from skills.claim_audit.signals import claim_health
+
+    rows = markdown_claims.collect(markdown_claims.compute_source_state())
+    fitted = claim_health.fit(rows)
+    if fitted["total"] == 0:
+        verdict = "no_data"
+    else:
+        lr = fitted.get("live_ratio")
+        verdict = ("healthy" if (lr is None or lr >= claim_health.DEGRADED_THRESHOLD)
+                   else "degraded")
+
+    dangling: list[dict] = []
+    for r in rows:
+        v = r.get("value", {})
+        if v.get("receipt") in ("dangling_file", "dangling_line"):
+            dangling.append({
+                "source": v["source"], "line": v["line"],
+                "target_raw": v["target_raw"], "receipt": v["receipt"],
+            })
+    dangling.sort(key=lambda d: (d["source"], d["line"]))
+
+    by_source = fitted.get("by_source", {})
+    sources_dangling: list[dict] = []
+    for src, cnts in by_source.items():
+        n = cnts.get("dangling_file", 0) + cnts.get("dangling_line", 0)
+        if n:
+            sources_dangling.append({"source": src, "count": n})
+    sources_dangling.sort(key=lambda d: (-d["count"], d["source"]))
+
+    return {
+        "verdict": verdict,
+        "total": fitted["total"],
+        "internal": fitted["internal"],
+        "live": fitted["live"],
+        "dangling": fitted["dangling"],
+        "unverified_anchor": fitted["unverified_anchor"],
+        "live_ratio": fitted["live_ratio"],
+        "degraded_threshold": claim_health.DEGRADED_THRESHOLD,
+        "top_dangling_sources": sources_dangling[:10],
+        "dangling_links": dangling[:50],
+    }
+
+
 def gather() -> dict:
     """Return the current snapshot as a dict. Pure read; no side effects."""
     history = _audit_history()
     latest_audit = history[-1] if history else None
+    live_audit = _audit_live()
     return {
-        "schema_version": 2,
+        "schema_version": 5,
         "captured_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "bedrock": {p: _file_observation(p) for p in BEDROCK_FILES},
         "audit": {
@@ -264,10 +481,18 @@ def gather() -> dict:
             "latest_by_regime": latest_audit["by_regime"] if latest_audit else {},
             "latest_by_skill": latest_audit["by_skill"] if latest_audit else {},
             "first_floor_ratio": history[0]["floor_ratio"] if history else None,
+            "live_floor_ratio": live_audit["floor_ratio"],
+            "live_by_regime": live_audit["by_regime"],
+            "live_by_skill": live_audit["by_skill"],
+            "live_total": live_audit["total"],
+            "live_source_state": live_audit["source_state"],
         },
         "boards": _board_observations(),
         "leashes": _leash_observations(),
+        "floor_growth": _floor_growth_observation(),
+        "claim_health": _claim_health_observation(),
         "pending_decisions": _pending_decisions(),
+        "proposal_flow": _proposal_flow_series(),
     }
 
 

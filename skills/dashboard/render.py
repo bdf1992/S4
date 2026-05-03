@@ -144,17 +144,28 @@ def _audit_bundle_history() -> list[tuple[Path, dict]]:
 
 def _floor_ratio_section(*, include_trend: bool) -> list[str]:
     out = _section("Floor ratio")
+    live = _snap._audit_live()
     history = _audit_bundle_history()
-    if not history:
-        out.append("_No audit bundles found. Run `python -m skills.regime_audit.orchestrate` to emit one._")
-        return out
-    latest_dir, latest_data = history[-1]
-    stats = latest_data.get("stats", {})
-    fr = stats.get("floor_ratio")
-    by_regime = stats.get("by_regime", {})
-    rel_latest = latest_dir.relative_to(REPO).as_posix()
+    fr = live.get("floor_ratio")
+    by_regime = live.get("by_regime", {})
     fr_str = f"{fr:.3f}" if isinstance(fr, (int, float)) else str(fr)
-    out.append(f"**Latest floor_ratio = {fr_str}**  (source: {_link(rel_latest + '/stats.json')})")
+    out.append(
+        f"**Live floor_ratio = {fr_str}**  "
+        f"(verdict from {_link('skills/regime_audit/signals/regime_distribution.py', 'regime_distribution')} "
+        f"signal on current source)"
+    )
+    if history:
+        latest_dir, latest_data = history[-1]
+        archived_fr = latest_data.get("stats", {}).get("floor_ratio")
+        rel_latest = latest_dir.relative_to(REPO).as_posix()
+        if isinstance(archived_fr, (int, float)) and isinstance(fr, (int, float)):
+            drift = fr - archived_fr
+            drift_word = "matches" if abs(drift) < 0.0005 else (f"{drift:+.3f} vs")
+            out.append("")
+            out.append(
+                f"_Last archive bundle ({_link(rel_latest + '/stats.json', latest_dir.name)}) "
+                f"recorded {archived_fr:.3f}; live {drift_word} archive._"
+            )
     out.append("")
     out.append("Definition: `(0.1 + 0.2) / 0.3` — the substrate-to-free-write ratio. Growing means the floor is compounding.")
     out.append("")
@@ -259,16 +270,98 @@ def _leash_section() -> list[str]:
     return out
 
 
+def _floor_growth_section() -> list[str]:
+    out = _section("Floor growth — peer consumption")
+    fg = _snap._floor_growth_observation()
+    by_skill = fg.get("by_skill") or {}
+    counts = fg.get("counts") or {}
+    ranked = fg.get("ranked") or []
+    if not by_skill:
+        out.append("_No floor-growth data._")
+        return out
+    out.append(
+        f"_graduated {counts.get('graduated', 0)} · "
+        f"candidate {counts.get('candidate', 0)} · "
+        f"isolated {counts.get('isolated', 0)} · "
+        f"no_structure {counts.get('no_structure', 0)} · "
+        f"source: {_link('tools/floor_growth.py')}_"
+    )
+    out.append("")
+    out.append("| Skill | Status | Verifier | Lib used | Signals used | Importers |")
+    out.append("| --- | --- | :-: | :-: | :-: | --- |")
+    for name in sorted(by_skill):
+        v = by_skill[name]
+        importers = v.get("importers") or []
+        if importers:
+            shown = ", ".join(
+                _link(i["importer"]) + (f"·{i['submodule']}" if i.get("submodule") else "")
+                for i in importers[:3]
+            )
+            if len(importers) > 3:
+                shown += f" +{len(importers) - 3}"
+        else:
+            shown = "_none_"
+        out.append(
+            f"| `{name}` | **{v.get('status', '?')}** | "
+            f"{'yes' if v.get('verifier_present') else 'no'} | "
+            f"{'yes' if v.get('lib_consumed') else 'no'} | "
+            f"{'yes' if v.get('signals_consumed') else 'no'} | "
+            f"{shown} |"
+        )
+    if ranked:
+        out.append("")
+        out.append("### Ranked next-target candidates")
+        out.append("")
+        for r in ranked:
+            out.append(f"**{r['rule_id']}** ({len(r['skills'])}) — {r['rule_text']}")
+            for s in r["skills"]:
+                out.append(f"- `{s}`")
+            out.append("")
+    return out
+
+
+def _claim_health_section() -> list[str]:
+    out = _section("Claim health — markdown pointers")
+    ch = _snap._claim_health_observation()
+    verdict = ch.get("verdict", "?")
+    lr = ch.get("live_ratio")
+    threshold = ch.get("degraded_threshold")
+    lr_str = f"{lr:.3f}" if isinstance(lr, (int, float)) else "—"
+    th_str = f"{threshold:.2f}" if isinstance(threshold, (int, float)) else "0.95"
+    out.append(
+        f"**verdict {verdict}** · live_ratio {lr_str} (threshold {th_str}) · "
+        f"{ch.get('live', 0)} live / {ch.get('internal', 0)} internal · "
+        f"{ch.get('dangling', 0)} dangling · "
+        f"{ch.get('unverified_anchor', 0)} anchor-unverified · "
+        f"{ch.get('total', 0)} total."
+    )
+    out.append("")
+    out.append(
+        f"_Source: live walk via {_link('skills/claim_audit/SKILL.md', 'skills/claim_audit')}._"
+    )
+    dangling_links = ch.get("dangling_links") or []
+    if dangling_links:
+        out.append("")
+        out.append("### Dangling claims")
+        out.append("")
+        out.append("| Source | Target (raw) | Receipt |")
+        out.append("| --- | --- | --- |")
+        for d in dangling_links:
+            src_link = _link(f"{d['source']}#L{d['line']}", f"{d['source']}:{d['line']}")
+            tgt = d["target_raw"]
+            out.append(f"| {src_link} | `{tgt}` | {d['receipt']} |")
+    else:
+        out.append("")
+        out.append("_No dangling internal claims._")
+    return out
+
+
 def _skills_regime_section() -> list[str]:
     out = _section("Skills — regime distribution")
-    history = _audit_bundle_history()
-    if not history:
-        out.append("_No audit bundles to source from._")
-        return out
-    _, latest_data = history[-1]
-    by_skill: dict[str, dict[str, int]] = latest_data.get("stats", {}).get("by_skill", {})
+    live = _snap._audit_live()
+    by_skill: dict[str, dict[str, int]] = live.get("by_skill") or {}
     if not by_skill:
-        out.append("_Latest audit bundle has no by_skill data._")
+        out.append("_No regime data — collector returned no classified files._")
         return out
     regime_cols = ["bedrock", "0.0", "0.1", "0.2", "0.3", "unclassified"]
     out.append("| Skill | " + " | ".join(regime_cols) + " | Total |")
@@ -300,6 +393,8 @@ def render_dashboard(*, include_trend: bool = True) -> str:
     parts.extend(_floor_ratio_section(include_trend=include_trend))
     parts.extend(_boards_section())
     parts.extend(_leash_section())
+    parts.extend(_floor_growth_section())
+    parts.extend(_claim_health_section())
     parts.extend(_skills_regime_section())
     return "\n".join(parts).rstrip() + "\n"
 
