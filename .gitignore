@@ -25,8 +25,11 @@ skills/regime_audit/outputs/
 boards/datasets/
 
 # Heartbeat receipts are runtime fire-events; regenerable, not source.
+# Outputs are ritual products from runs (per traces/002_gaps.md GAP-13);
+# also regenerable from re-running the ritual against a known config + HEAD.
 # (Hand-played traces under traces/ ARE source — referenced from proposals.)
 heartbeats/receipts/
+heartbeats/outputs/
 
 # Foundations are hardcoded after move 1; this is just python hygiene
 __pycache__/
