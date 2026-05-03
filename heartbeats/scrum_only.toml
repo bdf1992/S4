@@ -1,0 +1,13 @@
+# Smallest end-to-end heartbeat config — single ritual, no fan_out, no loop.
+# Used as the shadow-design seed for the heartbeat runner.
+# See traces/runner_trace.jsonl for hand-play records and traces/001_gaps.md
+# for what this hand-play surfaced.
+
+schedule = "operator-triggered"   # GAP-3: scheduler-binding shape for hand-play vs cron-fired
+surface  = "agent-subagent"
+loop     = false
+
+[[step]]
+id    = "scrum"
+skill = "scrum"
+# gate omitted → ritual's default gate from heartbeat.json applies
