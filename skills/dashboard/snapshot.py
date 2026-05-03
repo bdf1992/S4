@@ -465,13 +465,74 @@ def _claim_health_observation() -> dict:
     }
 
 
+def _slash_command_health_observation() -> dict:
+    """Walk live slash-command corpus via the sibling skill and surface
+    its `slash_command_collision` signal + reserved-name shadow detection.
+    Second peer importer of an `isolated_with_signals` leash skill (after
+    `claim_audit`), graduating `leash_for_slash_commands` past rung-4 in
+    CLAUDE.md's framing — the signal that fences candidate slash-command
+    names is now consumed by a peer 3.0 surface, not just by its own
+    orchestrate.py."""
+    from skills.leash_for_slash_commands.collectors import (
+        slash_command_config, slash_command_decl,
+    )
+    from skills.leash_for_slash_commands.signals import slash_command_collision
+
+    config_rows = slash_command_config.collect(
+        slash_command_config.compute_source_state()
+    )
+    decl_rows = slash_command_decl.collect(
+        slash_command_decl.compute_source_state()
+    )
+    reserved_names = sorted({r["value"]["name"] for r in decl_rows})
+
+    # Probe the signal against each live command name. A `collides` verdict
+    # against the corpus-fitted hashes is trivial self-match; the surface
+    # of interest is *reserved-name shadowing* — a user/project command
+    # whose name is reserved by the upstream taxonomy.
+    fitted = slash_command_collision.fit(config_rows)
+    reserved_shadows: list[dict] = []
+    for r in config_rows:
+        name = r["value"]["name"]
+        if name in reserved_names:
+            reserved_shadows.append({
+                "name": name,
+                "scope": r["value"]["scope"],
+                "commands_path": r["value"]["commands_path"],
+            })
+    reserved_shadows.sort(key=lambda d: (d["name"], d["scope"]))
+
+    by_scope: dict[str, int] = {"user": 0, "project": 0}
+    for r in config_rows:
+        sc = r["value"]["scope"]
+        by_scope[sc] = by_scope.get(sc, 0) + 1
+
+    if reserved_shadows:
+        verdict = "shadowing"
+    elif not config_rows:
+        verdict = "no_data"
+    else:
+        verdict = "clean"
+
+    return {
+        "verdict": verdict,
+        "user_commands_total": len(config_rows),
+        "user_commands_unique": len(fitted),
+        "by_scope": by_scope,
+        "reserved_names_total": len(reserved_names),
+        "reserved_shadows": reserved_shadows,
+        "config_source_state": slash_command_config.compute_source_state(),
+        "decl_source_state": slash_command_decl.compute_source_state(),
+    }
+
+
 def gather() -> dict:
     """Return the current snapshot as a dict. Pure read; no side effects."""
     history = _audit_history()
     latest_audit = history[-1] if history else None
     live_audit = _audit_live()
     return {
-        "schema_version": 5,
+        "schema_version": 6,
         "captured_at": _dt.datetime.now().isoformat(timespec="seconds"),
         "bedrock": {p: _file_observation(p) for p in BEDROCK_FILES},
         "audit": {
@@ -491,6 +552,7 @@ def gather() -> dict:
         "leashes": _leash_observations(),
         "floor_growth": _floor_growth_observation(),
         "claim_health": _claim_health_observation(),
+        "slash_command_health": _slash_command_health_observation(),
         "pending_decisions": _pending_decisions(),
         "proposal_flow": _proposal_flow_series(),
     }
