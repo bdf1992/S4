@@ -1,0 +1,37 @@
+[
+  {
+    "capability_id": "feature_folder_scaffold",
+    "what_scaffold_does": "Given a feature-name string, generates a structured directory under 'openspec/changes/<feature>/' containing four named artifact slots ('proposal.md', spec files, 'design.md', task checklist).",
+    "chain_equivalent_when_ready": "A 3.0 orchestration that invokes a 1.0 scaffold-collector with kind=feature_folder, producing a directory at proposals/{proposal_id}/ conformant to foundations/proposal.md (proposal.json + candidate/ + gap.json + pre_verification.json).",
+    "parity_predicate": "Given the same feature-name string as input, a 1.0 parity-collector compares scaffold-emitted directory and chain-emitted directory and emits a passed data point iff: (a) both contain the count of named slots declared in this entry's structural-equivalence map, (b) the chain-side directory passes foundations/proposal.md's draft-time validators.",
+    "evidence_pointer": null
+  },
+  {
+    "capability_id": "spec_format_with_scenarios",
+    "what_scaffold_does": "Provides a file shape where each requirement is paired with one or more 'scenarios' (testable preconditions and expected outcomes) the agent can read and an implementation can be checked against.",
+    "chain_equivalent_when_ready": "The schema-validator-sample triplet from foundations/zero-four.md §'Candidate-1.0 → graduated 1.0' (declared schema + deterministic validator + non-empty sample). The scaffold's scenario maps to the sample; the requirement maps to the schema; the validator is the chain's added load-bearing piece the scaffold lacks.",
+    "parity_predicate": "For each scaffold-emitted spec file, a 1.0 parity-collector emits a passed data point iff the chain-side triplet's validator (i) accepts every scaffold scenario whose declared outcome is 'expected pass' and (ii) rejects every scenario whose declared outcome is 'expected fail'. Scaffold-side scenarios with no declared outcome class are not parity-checkable and are excluded from the predicate (recorded as a coverage gap, not a regression).",
+    "evidence_pointer": null
+  },
+  {
+    "capability_id": "design_doc_surface",
+    "what_scaffold_does": "Provides a 'design.md' artifact slot where technical-approach reasoning lives, separated from the proposal's 'why' and the spec's 'what'.",
+    "chain_equivalent_when_ready": "The orchestration's declared-decision-points block (per foundations/zero-four.md §'The orchestration audit budget'), where each decision point names its consulted fence; the structural log of decision-point-to-fence mappings is the chain's equivalent of the design doc's technical-approach narrative.",
+    "parity_predicate": "For each scaffold-emitted design doc, a 1.0 parity-collector emits a passed data point iff every technical decision the design doc names appears in the chain orchestration's declared-decision-points list with a resolvable fence pointer. A design-doc decision with no corresponding declared decision point is a coverage gap, not a regression.",
+    "evidence_pointer": null
+  },
+  {
+    "capability_id": "archive_lifecycle",
+    "what_scaffold_does": "Moves completed feature folders into a separate archive location while preserving inspectable history, so completed work does not clutter the active workspace but remains walkable.",
+    "chain_equivalent_when_ready": "The append-only status history in foundations/proposal.md §Promotion (proposed → promoted | rejected | superseded), with directories staying on disk under proposals/ as frozen trace and the latest proposal.json record naming the current status.",
+    "parity_predicate": "For each scaffold-archived folder, a 1.0 parity-collector emits a passed data point iff a corresponding chain-side proposal directory has a proposal.json record with status ∈ {promoted, rejected, superseded}, the directory remains readable, and the decision_record_pointer resolves.",
+    "evidence_pointer": null
+  },
+  {
+    "capability_id": "slash_command_agent_surface",
+    "what_scaffold_does": "Exposes a set of Claude Code slash commands ('/opsx:propose', '/opsx:implement', '/opsx:archive', etc.) the operator invokes to drive proposal authoring, implementation, and archival via the agent.",
+    "chain_equivalent_when_ready": "Skills under skills/, each carrying SKILL.md per skills/subprotocol-for-claude-code/ discipline, invocable via Claude Code's Skill tool from the operator or from a 3.0 orchestration. One skill per scaffold slash command, named in this entry's command-to-skill map (to be authored at adoption-time).",
+    "parity_predicate": "For each scaffold slash command in the command-to-skill map, a 1.0 parity-collector emits a passed data point iff: (a) the named chain-side skill exists with a valid SKILL.md, (b) given the same input shape as the scaffold command, the skill produces an output that a scaffold-skill-translator (1.0 collector at the boundary) verifies as shape-equivalent to the scaffold's output for the same input.",
+    "evidence_pointer": null
+  }
+]

@@ -124,5 +124,6 @@ Holding all of these at once is what lets a scaffold be useful during bootstrap 
 | scaffold_id | Adopted | Status | Parity surface | Maximum tenancy |
 | --- | --- | --- | --- | --- |
 | `openspec` | (pending operator commit of `foundations/scaffolds/openspec/parity_surface.json`) | not yet adopted | (to be committed) | (to be declared at adoption) |
+| `openspec` | 2026-05-05 | adopted | [`foundations/scaffolds/openspec/parity_surface.json`](scaffolds/openspec/parity_surface.json) | 6 months (forced re-justification by 2026-11-05) |
 
 This table is updated by the same append-only discipline as the rest of the contract: adoption appends a row; status changes append a new row; rows are never edited in place.
