@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zero-four-experiment"
+version = "0.0.1"
+description = "Experimental harness for the 0.4 protocol — runs the 3.0→1.0→2.0→3.0→4.0 chain bottom-up to test whether 4.0 becomes producible from current-day primitives."
+requires-python = ">=3.10"
+dependencies = [
+    "radon>=6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["skills*", "foundations*", "debts*"]
+exclude = ["**/__pycache__*", "**/outputs*"]
