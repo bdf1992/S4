@@ -6,9 +6,13 @@
   "interest": "A reviewer skimming a diff cannot tell whether complexity grew, only whether length did. The audit produces false confidence — passes that don't mean what they claim to mean.",
   "payoff": "Replace the LOC budget with cyclomatic complexity (McCabe 1976; NIST SP 500-235; Pylint/Ruff/Radon defaults of <= 10 per function). Use radon (https://radon.readthedocs.io/) to compute per-function complexity in audit_program(). Audit budget rule becomes 'every function <= 10 cyclomatic complexity, module <= 30 cumulative.'",
   "severity": "load_bearing",
-  "status": "open",
+  "status": "closed_paid",
   "re_trigger": "a collector under 80 LOC ships a behavior change that should have been caught by the audit but wasn't (i.e., the false-confidence this debt warns about manifests)",
   "created_at": "2026-04-29",
-  "last_updated_at": "2026-04-29",
-  "depends_on": ["D-004"]
+  "last_updated_at": "2026-05-08",
+  "depends_on": ["D-004"],
+  "closure": {
+    "evidence": "40f8274 — audit.py rewritten to compute McCabe via radon.cc_visit; budgets shifted from LOC (80/60/150) to cumulative cyclomatic (≤30/module, ≤10/function); new violation codes function_complexity_exceeded and module_complexity_exceeded replace audit_budget_exceeded. New audit surfaces 2 pre-existing violators (hook_config:_walk_settings, data_point_resolver:resolve) — tracked as D-007.",
+    "closed_at": "2026-05-08"
+  }
 }
