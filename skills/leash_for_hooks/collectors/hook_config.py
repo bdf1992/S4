@@ -46,12 +46,8 @@ def _scope_of(pat: str) -> str:
 
 
 def _discover() -> list[tuple[str, Path]]:
-    out: list[tuple[str, Path]] = []
-    for pat in INPUTS:
-        p = _expand(pat)
-        if p.exists() and p.is_file():
-            out.append((pat, p))
-    return out
+    candidates = [(pat, _expand(pat)) for pat in INPUTS]
+    return [(pat, p) for pat, p in candidates if p.is_file()]
 
 
 def compute_source_state() -> str:
@@ -72,37 +68,51 @@ def _collector_pointer() -> dict:
     }
 
 
+def _walk_inner_hooks(pat: str, event: str, matcher: str, inner: list) -> list[dict]:
+    rows: list[dict] = []
+    for idx, h in enumerate(inner):
+        if not isinstance(h, dict):
+            continue
+        cmd = h.get("command", "")
+        if not isinstance(cmd, str):
+            continue
+        rows.append({
+            "scope": _scope_of(pat), "settings_path": pat,
+            "event": event, "matcher": matcher, "hook_index": idx,
+            "command": cmd,
+            "command_hash": "sha256:" + hashlib.sha256(cmd.encode()).hexdigest()[:16],
+        })
+    return rows
+
+
+def _walk_event_matchers(pat: str, event: str, matcher_list: list) -> list[dict]:
+    rows: list[dict] = []
+    for m_entry in matcher_list:
+        if not isinstance(m_entry, dict):
+            continue
+        matcher = m_entry.get("matcher", "")
+        inner = m_entry.get("hooks", [])
+        if not isinstance(inner, list):
+            continue
+        rows.extend(_walk_inner_hooks(pat, event, matcher, inner))
+    return rows
+
+
 def _walk_settings(pat: str, p: Path) -> list[dict]:
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return []
-    rows: list[dict] = []
-    hooks_block = data.get("hooks", {}) if isinstance(data, dict) else {}
+    if not isinstance(data, dict):
+        return []
+    hooks_block = data.get("hooks", {})
     if not isinstance(hooks_block, dict):
         return []
+    rows: list[dict] = []
     for event, matcher_list in hooks_block.items():
         if not isinstance(matcher_list, list):
             continue
-        for m_entry in matcher_list:
-            if not isinstance(m_entry, dict):
-                continue
-            matcher = m_entry.get("matcher", "")
-            inner = m_entry.get("hooks", [])
-            if not isinstance(inner, list):
-                continue
-            for idx, h in enumerate(inner):
-                if not isinstance(h, dict):
-                    continue
-                cmd = h.get("command", "")
-                if not isinstance(cmd, str):
-                    continue
-                rows.append({
-                    "scope": _scope_of(pat), "settings_path": pat,
-                    "event": event, "matcher": matcher, "hook_index": idx,
-                    "command": cmd,
-                    "command_hash": "sha256:" + hashlib.sha256(cmd.encode()).hexdigest()[:16],
-                })
+        rows.extend(_walk_event_matchers(pat, event, matcher_list))
     return rows
 
 
@@ -127,10 +137,7 @@ def verify(data_point: dict) -> tuple[str, str]:
         return "dangling", "bad_pattern"
     if not p.exists():
         return "dangling", "settings_file_missing"
-    fresh = _walk_settings(pat, p)
-    for row in fresh:
-        if (row["event"] == v["event"] and row["matcher"] == v["matcher"]
-                and row["hook_index"] == v["hook_index"]
-                and row["command_hash"] == v["command_hash"]):
-            return "live", "present"
-    return "dangling", "hook_changed_or_removed"
+    key = (v["event"], v["matcher"], v["hook_index"], v["command_hash"])
+    fresh = {(r["event"], r["matcher"], r["hook_index"], r["command_hash"])
+             for r in _walk_settings(pat, p)}
+    return ("live", "present") if key in fresh else ("dangling", "hook_changed_or_removed")
