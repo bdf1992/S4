@@ -6,15 +6,17 @@ Rejects programs that:
   - directly import banned-nondeterminism modules (`random`, `time`,
     `uuid`, `socket`); `datetime` is allowed only inside lib/data_point
     (the single localized use of wall-clock for advisory `collected_at`),
-  - exceed the audit budget (substantive lines of code).
-
-`substantive_lines` excludes blank lines, lines that are pure comments,
-and the module docstring. Imports count as substantive.
+  - exceed the audit budget (cyclomatic complexity per McCabe 1976,
+    NIST SP 500-235; computed via radon's cc_visit, defaults of <= 10
+    per function and <= 30 cumulative per module — see
+    https://radon.readthedocs.io/).
 """
 from __future__ import annotations
 
 import ast
 from pathlib import Path
+
+from radon.complexity import cc_visit
 
 # Names banned from collectors and resolvers. Note: `datetime` is banned
 # from collectors/resolvers but used inside lib/data_point.py — that file
@@ -22,9 +24,10 @@ from pathlib import Path
 BANNED_NONDET = frozenset({"random", "uuid", "socket"})
 BANNED_NONDET_TIME = frozenset({"time", "datetime"})  # extra scrutiny
 
-DEFAULT_COLLECTOR_BUDGET = 80
-DEFAULT_RESOLVER_BUDGET = 60
-DEFAULT_ORCHESTRATION_BUDGET = 150
+DEFAULT_PER_FUNCTION = 10
+DEFAULT_COLLECTOR_BUDGET = 30
+DEFAULT_RESOLVER_BUDGET = 30
+DEFAULT_ORCHESTRATION_BUDGET = 30
 
 
 def _imports(tree: ast.AST) -> list[str]:
@@ -39,24 +42,17 @@ def _imports(tree: ast.AST) -> list[str]:
     return names
 
 
-def _substantive_line_count(source: str) -> int:
-    count = 0
-    in_docstring = False
-    for i, raw in enumerate(source.splitlines()):
-        s = raw.strip()
-        if not s:
-            continue
-        if s.startswith("#"):
-            continue
-        # Trivial docstring detection — only counts the module docstring.
-        if i == 0 or in_docstring:
-            if s.startswith('"""') or s.startswith("'''"):
-                in_docstring = not in_docstring or s.count('"""') == 2 or s.count("'''") == 2
-                continue
-            if in_docstring:
-                continue
-        count += 1
-    return count
+def _complexity_violations(src: str, *, budget: int, per_function: int) -> list[str]:
+    violations: list[str] = []
+    cumulative = 0
+    for b in cc_visit(src):
+        cumulative += b.complexity
+        if b.complexity > per_function:
+            violations.append(
+                f"function_complexity_exceeded:{b.name}:{b.complexity}>{per_function}")
+    if cumulative > budget:
+        violations.append(f"module_complexity_exceeded:{cumulative}>{budget}")
+    return violations
 
 
 def audit_program(
@@ -65,8 +61,14 @@ def audit_program(
     llm_sdk_denylist: frozenset[str],
     budget: int,
     allow_datetime: bool = False,
+    per_function: int = DEFAULT_PER_FUNCTION,
 ) -> tuple[bool, list[str]]:
-    """Returns (ok, list_of_violation_codes)."""
+    """Returns (ok, list_of_violation_codes).
+
+    `budget` is the maximum cumulative cyclomatic complexity for the module
+    (formerly: substantive lines of code). `per_function` caps any single
+    function's cyclomatic complexity.
+    """
     src = path.read_text(encoding="utf-8")
     try:
         tree = ast.parse(src)
@@ -83,7 +85,5 @@ def audit_program(
             violations.append(f"banned_nondet_import:{full}")
         if root in BANNED_NONDET_TIME and not allow_datetime:
             violations.append(f"banned_time_import:{full}")
-    sloc = _substantive_line_count(src)
-    if sloc > budget:
-        violations.append(f"audit_budget_exceeded:{sloc}>{budget}")
+    violations += _complexity_violations(src, budget=budget, per_function=per_function)
     return (not violations), violations
