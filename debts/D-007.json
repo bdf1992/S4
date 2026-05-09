@@ -1,14 +1,18 @@
 {
   "id": "D-007",
-  "subject": "skills/leash_for_hooks/collectors/hook_config.py — module cumulative cyclomatic exceeds D-003 budget",
+  "subject": "skills/leash_for_hooks — pre-existing functions exceed McCabe budget after D-003",
   "kind": "working_but_unanchored",
-  "principal": "After D-003 flipped the audit budget from LOC to McCabe cyclomatic complexity (≤10 per function, ≤30 cumulative per module), two violators surfaced. The per-function violations have been refactored (commit d9b55a7): collectors/hook_config.py:_walk_settings split into _walk_settings (CC=6) + _walk_event_matchers (CC=4) + _walk_inner_hooks (CC=4); resolvers/data_point.py:resolve split into _validate_target (CC=5) + _scan_jsonl (CC=5) + resolve (CC=5). All functions are now ≤10. However hook_config.py module-cumulative cyclomatic complexity remains 34 (vs D-003's ≤30 budget): the module performs intrinsically branchy work — INPUT-pattern discovery (4), source-state hashing (3), 3-level type-guarded JSON walking (14 across 3 helpers), and per-row provenance verification (5) — and per-function splits add base-1 counts faster than they reduce branch counts. Further refactor without changing behavior or removing defensive isinstance guards on external JSON input is not visible.",
-  "interest": "skills/leash_for_hooks/verify.py reports 1 fail / 19 self-checks (down from 2 fail before commit d9b55a7). The single remaining failure is module-cumulative, not per-function. Any SDLC pipeline gate that treats verify.py exit code as green/red signal remains red. The gap is 4 cumulative points (34 vs 30); the module would need 12-13% structural reduction to clear. Pylint, NIST SP 500-235, and McCabe 1976 all name per-function CC thresholds; module-cumulative is operator-authored discretion in D-003's payoff, not a vendor-anchored standard.",
-  "payoff": "Two paths. (a) Domain-aware budget: open a new debt to relax DEFAULT_COLLECTOR_BUDGET (raise to e.g. 40 cumulative) on the basis that collector modules with external-input type-guarding intrinsically exceed 30; document the relaxation in audit.py with the citation gap acknowledged. (b) Structural compression: simplify hook_config.py beyond branch-shifting — e.g., centralize the type-guard checks into a single validation pass that produces a normalized dict of (event, matcher_list) tuples, then iterate the normalized form without per-level isinstance branches. (a) is cheaper and acknowledges the standards gap honestly; (b) is more work and doesn't generalize. Recommendation: (a).",
-  "severity": "cosmetic",
-  "status": "open",
+  "principal": "After D-003 flipped the audit budget from LOC to McCabe cyclomatic complexity (≤10 per function, ≤30 cumulative per module), two violators surfaced: collectors/hook_config.py:_walk_settings (CC=12, exceeds per-function ≤10; module cumulative 35 exceeds ≤30) and resolvers/data_point.py:resolve (CC=11, exceeds per-function ≤10). The functions worked correctly — they were authored under the old LOC budget — but exceeded the new structural budget D-003 established as the audit surface's truth.",
+  "interest": "skills/leash_for_hooks/verify.py reported 2 fail / 19 self-checks until refactored. SDLC pipeline gate (verify.py exit code) stayed red. Other skills that import the canonical audit module inherit the same surface, so similar violators may appear in claim_audit / regime_audit / leash_for_slash_commands / leash_for_symphony as their verifiers tighten.",
+  "payoff": "Refactor each violator under McCabe ≤10/function and ≤30/module by structural compression — centralize repeated type-guard logic into a single helper instead of branch-shifting across split helpers. Specifically: (1) resolvers/data_point.py:resolve — split target validation, datasets-dir check, and per-jsonl scan into separate helpers. (2) collectors/hook_config.py:_walk_settings — define `_safe(x, t)` that returns `x if isinstance(x, t) else t()`, then walk the nested JSON without per-level isinstance branches. The latter is the load-bearing technique: per-function splits alone shifted CC between functions but added base-1s and didn't reduce module-cumulative; centralized type-guarding collapses the guard branches into one CC=2 helper.",
+  "severity": "load_bearing",
+  "status": "closed_paid",
   "re_trigger": "n/a",
   "created_at": "2026-05-08",
   "last_updated_at": "2026-05-08",
-  "depends_on": ["D-003"]
+  "depends_on": ["D-003"],
+  "closure": {
+    "evidence": "d9b55a7 + 5384eec — d9b55a7 split per-function violators (resolve into 3 helpers; _walk_settings into 3 helpers including _walk_event_matchers/_walk_inner_hooks). That move closed per-function but kept hook_config.py module-cumulative at 34 (was 35), still over ≤30. 5384eec applied structural compression: introduced `_safe(x, t)` (CC=2) at module scope, deleted both intermediate split helpers, rewrote `_walk_settings` (CC=6) using `_safe` at every nesting level. Final radon: hook_config.py module CC 28, max function CC 6. verify.py: 19 self-checks, 0 failures.",
+    "closed_at": "2026-05-08"
+  }
 }
