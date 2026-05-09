@@ -14,14 +14,30 @@ Operator interface for the cc-symphony work lifecycle on `bdf1992/S4`. Every ste
 
 This is a **3.0 program under 0.3 discipline** — the agent (me) does judgment work (drafting issue bodies from operator briefs, surfacing review context, deciding approve-vs-reject framing); the skill does deterministic work (gh CLI calls, JSON parsing, status writes). The seam between LLM-judgment and deterministic-execution is the line between this `SKILL.md` (which I read at invocation time to know how to draft) and `lifecycle.py` (which is pure 1.0 — no LLM, just gh CLI).
 
+## Lifecycle states (project Status field)
+
+The kanban has four columns. Each column maps to a label state and an actor:
+
+| Status | Labels present | Who moves to this state | What it means |
+|---|---|---|---|
+| **Todo** | `symphony` | `new` (operator) | Issue authored, awaiting dispatch |
+| **In Progress** | `symphony` + `symphony-doing` | `dispatch` (cc-symphony or operator) | Agent currently working |
+| **In Review** | `symphony` + `symphony-done` (no `symphony-doing`) | `mark-done` (agent) | Agent finished, PR open, awaiting operator |
+| **Done** | issue closed | `approve` (operator) | Operator approved, work merged |
+
+Plus a project-level **Retry count** number field, incremented by `reject` each time the operator routes an issue back through retry.
+
 ## Subcommands
 
 ```
-python -m skills.symphony new --title "<title>" --kind <debt|feature|refactor>     # body via stdin
+python -m skills.symphony new --title "<title>" --kind <debt|feature|refactor>   # body via stdin
+python -m skills.symphony dispatch <issue-number>                                # operator manual dispatch (cc-symphony does this automatically when running)
+python -m skills.symphony mark-done <issue-number>                               # agent-side; optional completion comment via stdin
+python -m skills.symphony pr <issue-number> --title "<title>"                    # agent-side; PR body via stdin
 python -m skills.symphony status
 python -m skills.symphony review <issue-number>
-python -m skills.symphony approve <issue-number>
-python -m skills.symphony reject <issue-number>
+python -m skills.symphony approve <issue-number> [--merge {squash,merge,rebase}]
+python -m skills.symphony reject <issue-number> [--reason "<text>"]
 python -m skills.symphony probe
 ```
 
@@ -37,25 +53,37 @@ The skill: (1) creates the github issue via `gh issue create` with labels `symph
 
 cc-symphony, when running, polls every `polling.interval_ms` (default 30s), sees the `symphony` label, adds `symphony-doing` automatically, spawns an agent in an isolated workspace clone, runs the body template against the issue.
 
+### `dispatch <N>` — operator manual dispatch
+
+What cc-symphony's orchestrator does automatically when running. Without cc-symphony, the agent (or operator) calls this to add `symphony-doing`, set Status=In Progress, and create local branch `issue-<N>`. Caller does the work on that branch then calls `mark-done`.
+
+### `mark-done <N>` — agent completion
+
+Agent-side completion call. Adds `symphony-done`, removes `symphony-doing`, sets Status=In Review, optionally posts a completion comment (read from stdin if non-empty). Per cc-symphony spec the agent does NOT close the issue — the operator decides via `approve`.
+
+### `pr <N> --title "<title>"` — open a PR
+
+Agent-side PR opener. Reads PR body from stdin. Branch must already be pushed to origin as `issue-<N>`. Opens the PR against `master` (override with `--base`).
+
 ### `status` — render the Projects board
 
-Pulls `gh project item-list 1 --owner bdf1992 --format json`, groups by `Status` field, prints a kanban-shaped text rendering — Todo / In Progress / Done columns with issue numbers + titles + labels. Also probes cc-symphony at `http://127.0.0.1:8080/api/status` (silently — adds a status line if the server is running, omits if not).
+Pulls `gh project item-list 1 --owner bdf1992 --format json`, groups by `Status` field, prints the kanban as four columns — Todo / In Progress / In Review / Done — with issue numbers + titles. Also probes cc-symphony at `http://127.0.0.1:8080/api/status` and prints `running={n} retrying={n} completed={n}` if reachable.
 
 ### `review <N>` — fetch issue + PR for operator review
 
 Pulls the issue body + comments via `gh issue view`, finds any linked PR via `gh pr list --search "linked:#<N>"`, checks for the `symphony-done` label. Renders all three for the operator to read inline. The operator decides approve/reject through follow-up turn.
 
-### `approve <N>` — close issue, mark Done
+### `approve <N> [--merge {squash,merge,rebase}]` — close issue, mark Done, optionally merge PR
 
-Closes the issue with `gh issue close <N> --reason completed`, sets project Status to `Done`, leaves all labels. The completed work is now part of github's permanent issue history; the agent's PR (if any) lands separately on its own approval cycle.
+Closes the issue with `gh issue close <N> --reason completed`, sets project Status to `Done`. With `--merge` set, finds the linked open PR and merges it with the named strategy + deletes the head branch. Without `--merge`, the PR is left open for separate handling.
 
-### `reject <N>` — remove `symphony-done`, route to retry
+### `reject <N> [--reason "<text>"]` — route back through retry
 
-Removes the `symphony-done` label via `gh issue edit <N> --remove-label symphony-done`, sets project Status to `In Progress`, optionally adds a comment with the operator's rejection reason. cc-symphony's reconciliation step will see `symphony-doing` still present and `symphony-done` absent and may retry the dispatch (depends on retry-policy in WORKFLOW.md).
+Removes the `symphony-done` label, increments the project's Retry count number field, sets project Status to `In Progress`, optionally posts a rejection comment with the operator's reason. cc-symphony's reconciliation step will see `symphony-doing` still present and `symphony-done` absent and may retry the dispatch (per cc-symphony's retry policy; the `attempt` Liquid variable will be incremented in the body template).
 
 ### `probe` — check cc-symphony server uptime
 
-Curls `http://127.0.0.1:8080/api/status`. Reports `running` (with active-run count, completed-count) or `not_running`. No side effects.
+Curls `http://127.0.0.1:8080/api/status`. Reports `running` (with `running_count`, `retrying_count`, `completed_count`) or `not_running`. No side effects.
 
 ## Issue body template
 
