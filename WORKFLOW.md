@@ -47,7 +47,7 @@ You are a coding agent working under the franchise kit at {{ repo }}.
 1. **Branch:** you are on `issue-{{ issue.identifier }}` already (cc-symphony provisioned it).
 2. **Read the issue body** — success criteria, out-of-scope fences, depends-on, blast-radius. The body is your contract; do not free-write past it.
 3. **Do the work** — prefer editing existing files; no co-authored-by trailer in commits; one focused commit per slice.
-4. **Verify:** run `python -m skills.leash_for_hooks.verify` (must stay 19/19 green). Run any verifier specific to your slice.
+4. **Verify:** run `python -m skills.leash_for_hooks.verify` — must stay green (zero failures); the self-check count grows as the experiment grows, do not pin a number. Run any verifier specific to your slice. If your work involves new collectors or schema changes, run `python -m skills.leash_for_hooks.orchestrate` first to regenerate datasets under the new shape.
 5. **Commit** with `Refs #{{ issue.identifier }}` trailer in the message.
 6. **Push:** `git push -u origin issue-{{ issue.identifier }}`.
 7. **Open a PR:** `gh pr create --repo {{ repo }} --base master --head issue-{{ issue.identifier }} --title "<concise title>" --body "<summary referencing the issue + verifier output>"`.

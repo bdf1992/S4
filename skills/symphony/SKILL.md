@@ -99,6 +99,14 @@ Removes the `symphony-done` label, increments the project's Retry count number f
 
 Curls `http://127.0.0.1:8080/api/status`. Reports `running` (with `running_count`, `retrying_count`, `completed_count`) or `not_running`. No side effects.
 
+### `start` — launch cc-symphony detached
+
+Resolves `GITHUB_TOKEN` from `gh auth token` (gh CLI keychain — the token never appears in operator-visible env vars or chat transcripts), checks the cc-symphony binary is built at `~/cc-symphony/rust/target/release/symphony.exe`, checks `WORKFLOW.md` exists at the current working directory, probes the dashboard port to avoid double-launch, then spawns the daemon detached (Windows: `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP` so the daemon survives this Claude Code session ending). Reports the PID, port, and stop command. Idempotent — already-running cc-symphony is detected and reported, not double-launched.
+
+### `stop` — kill cc-symphony
+
+Sends `taskkill /F /IM symphony.exe` (Windows). Reports success, "was not running" if the daemon wasn't up, or surfaces the kill failure. POSIX support is a follow-up.
+
 ## Issue body template
 
 The agent fills [issue_template.md](issue_template.md) before invoking `new`. Template structure:

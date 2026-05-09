@@ -11,13 +11,15 @@ Usage:
     python -m skills.symphony bulk-approve <N1> <N2> ... [--merge {squash,merge,rebase}]
     python -m skills.symphony reject <issue-number> [--reason <text>]
     python -m skills.symphony probe
+    python -m skills.symphony start                                                  # launch cc-symphony detached on :8080 with $GITHUB_TOKEN from gh keychain
+    python -m skills.symphony stop                                                   # kill cc-symphony.exe
 """
 from __future__ import annotations
 
 import argparse
 import sys
 
-from . import lifecycle
+from . import lifecycle, process
 
 
 def _parse_int_or_die(s: str, label: str) -> int:
@@ -109,6 +111,10 @@ def main() -> int:
         return lifecycle.reject(reject_args.issue_number, reason=reject_args.reason)
     if sub == "probe":
         return lifecycle.probe()
+    if sub == "start":
+        return process.start()
+    if sub == "stop":
+        return process.stop()
     sys.stderr.write(f"symphony: unknown subcommand '{sub}'\n")
     sys.stdout.write(__doc__ or "")
     return 2
