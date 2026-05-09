@@ -134,7 +134,7 @@ def _check_data_points() -> list[dict]:
 
 def _check_orchestration_decision_points() -> list[dict]:
     src = (SKILL / "orchestrate.py").read_text(encoding="utf-8")
-    declared = ["workflow_field_validity", "permission_posture_check", "emission_gate"]
+    declared = ["workflow_field_validity", "permission_posture_check", "permission_config_check", "emission_gate"]
     fences = ["symphony_field_decl", "symphony_permission_posture", "emission_readiness"]
     missing = [d for d in declared if f'"{d}"' not in src]
     missing_fences = [f for f in fences if f not in src]
