@@ -14,6 +14,14 @@ Operator interface for the cc-symphony work lifecycle on `bdf1992/S4`. Every ste
 
 This is a **3.0 program under 0.3 discipline** — the agent (me) does judgment work (drafting issue bodies from operator briefs, surfacing review context, deciding approve-vs-reject framing); the skill does deterministic work (gh CLI calls, JSON parsing, status writes). The seam between LLM-judgment and deterministic-execution is the line between this `SKILL.md` (which I read at invocation time to know how to draft) and `lifecycle.py` (which is pure 1.0 — no LLM, just gh CLI).
 
+## Authoring discipline (load-bearing)
+
+Per memory: `feedback_outcome_authoring_not_task_authoring.md`. The operator authors at **outcome level**, never at task level. Their verbal brief gets restated as outcomes ("verifier 19/19 green," "X surface no longer does Y") before going into the issue body. The skill **does not** expose subtasks, parents, or sub-issues to the operator's view — the agent (cc-symphony's spawned worker, or me when running manually) handles all internal decomposition.
+
+The operator's review surface is the **acceptance walkthrough** — a comment the spawned agent posts at completion that demonstrates the outcome (verifier output, before/after of measurable state, success criteria checked). The operator decides approve/reject from that comment alone. They do not crawl the diff, the commit history, or any task list.
+
+This shapes what the skill grows: bulk-approve is OK (multiple acceptances at once); `--parent` / sub-issue authoring is NOT.
+
 ## Lifecycle states (project Status field)
 
 The kanban has four columns. Each column maps to a label state and an actor:
@@ -76,6 +84,12 @@ Pulls the issue body + comments via `gh issue view`, finds any linked PR via `gh
 ### `approve <N> [--merge {squash,merge,rebase}]` — close issue, mark Done, optionally merge PR
 
 Closes the issue with `gh issue close <N> --reason completed`, sets project Status to `Done`. With `--merge` set, finds the linked open PR and merges it with the named strategy + deletes the head branch. Without `--merge`, the PR is left open for separate handling.
+
+### `bulk-approve <N1> <N2> ... [--merge {squash,merge,rebase}]` — batch acceptance
+
+For legacy/concurrent acceptance cleanup — multiple acceptances landing the same day; pre-existing task-level queues from before the outcome-authoring framing was established. Calls `approve` for each issue in sequence. With `--merge` set, each linked PR is merged with that strategy.
+
+This is **not** a sub-issue or parent-child mechanism. The operator never authors task-level groupings; this just batches multiple independent acceptances into one verbal call. If you find yourself reaching for `bulk-approve` because you authored task-level issues, that's the signal that the next authoring should be at outcome level instead.
 
 ### `reject <N> [--reason "<text>"]` — route back through retry
 

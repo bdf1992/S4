@@ -326,6 +326,37 @@ def approve(issue_number: int, merge: str | None = None) -> int:
     return 0
 
 
+def bulk_approve(issue_numbers: list[int], merge: str | None = None) -> int:
+    """Operator-side: close + Status=Done for multiple issues in one call.
+
+    For legacy/concurrent acceptance cleanup (multiple acceptances landing
+    same day; pre-existing task-level queue from before outcome-level
+    framing was clear). Calls `approve` for each issue. With `merge` set,
+    each linked PR is merged with that strategy.
+
+    NOT a sub-issue / parent-child mechanism. Per memory:
+    feedback_outcome_authoring_not_task_authoring.md — operator never
+    authors task-level groupings. This is a batch helper for when
+    multiple independent acceptances are pending, not a way to flatten
+    a task list back into operator view.
+    """
+    print(f"=== bulk-approve {len(issue_numbers)} issue(s) "
+          f"{'with ' + merge + '-merge' if merge else 'without merge'} ===")
+    failures: list[int] = []
+    for n in issue_numbers:
+        print(f"\n--- #{n} ---")
+        rc = approve(n, merge=merge)
+        if rc != 0:
+            failures.append(n)
+    print()
+    if failures:
+        print(f"bulk-approve: {len(issue_numbers) - len(failures)}/{len(issue_numbers)} succeeded; "
+              f"failed: {failures}")
+        return 1
+    print(f"bulk-approve: {len(issue_numbers)}/{len(issue_numbers)} succeeded")
+    return 0
+
+
 def reject(issue_number: int, reason: str | None = None) -> int:
     """Operator-side: route back through the lifecycle for retry.
 

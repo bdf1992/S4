@@ -8,6 +8,7 @@ Usage:
     python -m skills.symphony status
     python -m skills.symphony review <issue-number>
     python -m skills.symphony approve <issue-number> [--merge {squash,merge,rebase}]
+    python -m skills.symphony bulk-approve <N1> <N2> ... [--merge {squash,merge,rebase}]
     python -m skills.symphony reject <issue-number> [--reason <text>]
     python -m skills.symphony probe
 """
@@ -93,6 +94,13 @@ def main() -> int:
                                     default=None)
         approve_args = approve_parser.parse_args(rest)
         return lifecycle.approve(approve_args.issue_number, merge=approve_args.merge)
+    if sub == "bulk-approve":
+        bulk_parser = argparse.ArgumentParser(prog="symphony bulk-approve")
+        bulk_parser.add_argument("issue_numbers", type=int, nargs="+")
+        bulk_parser.add_argument("--merge", choices=["squash", "merge", "rebase"],
+                                 default=None)
+        bulk_args = bulk_parser.parse_args(rest)
+        return lifecycle.bulk_approve(bulk_args.issue_numbers, merge=bulk_args.merge)
     if sub == "reject":
         reject_parser = argparse.ArgumentParser(prog="symphony reject")
         reject_parser.add_argument("issue_number", type=int)

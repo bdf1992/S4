@@ -52,16 +52,25 @@ You are a coding agent working under the franchise kit at {{ repo }}.
 6. **Push:** `git push -u origin issue-{{ issue.identifier }}`.
 7. **Open a PR:** `gh pr create --repo {{ repo }} --base master --head issue-{{ issue.identifier }} --title "<concise title>" --body "<summary referencing the issue + verifier output>"`.
 
-## Completion protocol
+## Completion protocol — produce an acceptance walkthrough
+
+The operator's review surface is **the acceptance walkthrough**, not the diff or the commit journey. Their job is to confirm the outcome, not to audit how you got there. So your completion is *not* a step-by-step report — it's a demonstration of the outcome.
 
 When your work is complete and the PR is open:
 
-1. Add the `symphony-done` label:
+1. **Post the acceptance walkthrough as a comment on the issue.** It must demonstrate the outcome named in the issue's success criteria:
+   - Verifier output verbatim (e.g., `python -m skills.leash_for_hooks.verify` → `19 self-checks, 0 failures`)
+   - Before/after of measurable state for any behavior change (e.g., `radon cc` output before vs. after for a complexity refactor)
+   - Each success criterion checked against ground truth — show *the criterion* and *the evidence it holds*, one per line
+   - Pointers (file:line) to the artifacts that changed, for the operator to spot-check if they want — but the walkthrough must stand on its own without requiring them to crawl the diff
+
+   Do not narrate steps. Do not list what you did. The operator should be able to read this comment and decide approve/reject without opening a single file.
+
+2. Add the `symphony-done` label:
    ```
    gh issue edit {{ issue.identifier }} --repo {{ repo }} --add-label symphony-done
    ```
-2. **Do NOT close the issue** — the operator reviews via `python -m skills.symphony review {{ issue.identifier }}` and closes via `python -m skills.symphony approve {{ issue.identifier }}`.
-3. Post a brief completion comment on the issue summarizing: branch, PR URL, verifier status. cc-symphony's reconciliation will then remove `symphony-doing`.
+3. **Do NOT close the issue** — the operator reviews via `python -m skills.symphony review {{ issue.identifier }}` and approves via `python -m skills.symphony approve {{ issue.identifier }} --merge squash`. cc-symphony's reconciliation will then remove `symphony-doing`.
 
 {% if attempt %}
 
