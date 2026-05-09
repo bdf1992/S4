@@ -292,6 +292,56 @@ def _set_retry_count(item_id: str, n: int) -> int:
     return rc
 
 
+def _pr_numbers_closing_issue(issue_number: int) -> list[int]:
+    """Return PR numbers whose closingIssuesReferences includes issue_number.
+
+    Uses the GraphQL API to walk open PRs and inspect each one's
+    closingIssuesReferences — the only reliable way to find which PR
+    closes a given issue.  `gh pr list --search "linked:#N"` does not
+    actually filter by linked issue (GitHub search falls back to default
+    ordering), so it is not used here.
+    """
+    query = (
+        "query($owner: String!, $repo: String!, $cursor: String) {"
+        "  repository(owner: $owner, name: $repo) {"
+        "    pullRequests(states: OPEN, first: 50, after: $cursor) {"
+        "      pageInfo { hasNextPage endCursor }"
+        "      nodes {"
+        "        number"
+        "        closingIssuesReferences(first: 25) {"
+        "          nodes { number }"
+        "        }"
+        "      }"
+        "    }"
+        "  }"
+        "}"
+    )
+    owner, repo_name = REPO.split("/", 1)
+    cursor: str | None = None
+    matched: list[int] = []
+    while True:
+        variables: dict[str, object] = {"owner": owner, "repo": repo_name}
+        if cursor:
+            variables["cursor"] = cursor
+        payload = json.dumps({"query": query, "variables": variables})
+        rc, data = _gh_json("api", "graphql", "--input", "-",
+                            stdin_input=payload)
+        if rc != 0 or not isinstance(data, dict):
+            break
+        prs_conn = (data.get("data") or {}).get("repository", {}).get("pullRequests", {})
+        for node in prs_conn.get("nodes", []):
+            pr_num = node.get("number")
+            closing = node.get("closingIssuesReferences", {}).get("nodes", [])
+            if any(ref.get("number") == issue_number for ref in closing):
+                if pr_num is not None:
+                    matched.append(pr_num)
+        page_info = prs_conn.get("pageInfo", {})
+        if not page_info.get("hasNextPage"):
+            break
+        cursor = page_info.get("endCursor")
+    return matched
+
+
 def approve(issue_number: int, merge: str | None = None) -> int:
     """Operator-side: close issue, set Status=Done. With `merge` set
     ('squash' | 'merge' | 'rebase'), also merges the linked PR with that
@@ -306,14 +356,11 @@ def approve(issue_number: int, merge: str | None = None) -> int:
     if item_id:
         _set_status(item_id, STATUS_OPTION_DONE)
     if merge:
-        rc2, pr_data = _gh_json("pr", "list", "--repo", REPO,
-                                "--search", f"linked:#{issue_number}",
-                                "--json", "number,state")
-        prs = [p for p in (pr_data or []) if isinstance(p, dict) and p.get("state") == "OPEN"]
-        if not prs:
+        pr_numbers = _pr_numbers_closing_issue(issue_number)
+        if not pr_numbers:
             print(f"approved: #{issue_number} closed, Status → Done. (no open linked PR; --merge skipped)")
             return 0
-        pr_number = prs[0]["number"]
+        pr_number = pr_numbers[0]
         rc3, _, err3 = _run(["gh", "pr", "merge", str(pr_number), "--repo", REPO,
                              f"--{merge}", "--delete-branch"])
         if rc3 != 0:
