@@ -1,0 +1,8 @@
+# Force LF line endings on files that downstream tools parse as YAML
+# or shell scripts. cc-symphony's YAML parser (rust/serde-yaml) treats
+# CRLF in some positions as malformed input and fails with
+#   "invalid type: unit value, expected path string"
+# at startup. Verified 2026-05-08 against cc-symphony 0.1.0.
+
+WORKFLOW.md text eol=lf
+*.sh text eol=lf
