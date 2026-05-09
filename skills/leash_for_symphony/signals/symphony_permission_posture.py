@@ -3,24 +3,33 @@
 Question answered: does a candidate WORKFLOW.md flip the operator's
 established permission posture (the values for claude.skip_permissions,
 claude.permission_mode, codex.approval_policy, codex.thread_sandbox) vs.
-the corpus mode?
+the corpus mode? Also: does the candidate satisfy the cross-field
+unattended-operation rule?
 
 Fitting: walks the symphony_workflow dataset; the fitted parameter is
 the per-key mode value (most-common observed) over the training rows,
 plus the training row count. Re-fitting is deterministic and itself a
 0.1 program.
 
-Verdict semantics:
+Verdict semantics for evaluate():
   posture_consistent — every posture key in the candidate matches the
     corpus mode (or the corpus is empty / the key is absent in both).
   posture_drift — at least one posture key in the candidate disagrees
     with a non-empty corpus mode, e.g. corpus mode says
     skip_permissions=False but candidate sets skip_permissions=True.
 
+Verdict semantics for check_permission_config():
+  permission_config_ok — claude.skip_permissions=true OR
+    claude.allowed_tools is a non-empty list; unattended operation is
+    safe.
+  permission_config_error — neither condition holds; unattended
+    operation would proceed without any permission fence, matching the
+    cc-symphony upstream validation error of the same name.
+
 On an empty corpus the verdict is posture_consistent with confidence 0
 — the same shape slash_command_collision uses for empty training.
 
-Probe set: two synthetic inputs whose expected verdicts are recorded as
+Probe set: four synthetic inputs whose expected verdicts are recorded as
 literals; verify.py runs the probes against the signal to confirm
 fit-time behavior holds at verification time."""
 from __future__ import annotations
@@ -30,6 +39,7 @@ from collections import Counter
 SIGNAL_ID = "symphony_permission_posture"
 TRAINING_DATASET_KIND = "symphony_workflow"
 VERDICT_ENUM = ("posture_consistent", "posture_drift")
+PERMISSION_CONFIG_VERDICT_ENUM = ("permission_config_ok", "permission_config_error")
 
 POSTURE_KEYS = (
     "claude_skip_permissions",
@@ -105,9 +115,26 @@ def evaluate(candidate: dict, *, fitted_modes: dict,
             "evidence_pointers": [], "drifted_keys": []}
 
 
+def check_permission_config(candidate: dict) -> dict:
+    """Cross-field rule: unattended operation requires either
+    claude.skip_permissions=true OR a non-empty claude.allowed_tools list.
+    Returns {verdict, reason} where verdict is one of
+    PERMISSION_CONFIG_VERDICT_ENUM."""
+    claude = candidate.get("claude") or {}
+    skip = claude.get("skip_permissions")
+    tools = claude.get("allowed_tools")
+    if skip is True:
+        return {"verdict": "permission_config_ok", "reason": "skip_permissions_true"}
+    if isinstance(tools, list) and tools:
+        return {"verdict": "permission_config_ok", "reason": "allowed_tools_non_empty"}
+    return {"verdict": "permission_config_error",
+            "reason": "neither skip_permissions=true nor non-empty allowed_tools"}
+
+
 PROBES: list[dict] = [
     {
         "name": "drift_detected",
+        "kind": "posture",
         "training": [{"id": "symphony_workflow:probe1", "value": {
             "permission_posture": {
                 "claude_skip_permissions": False,
@@ -121,6 +148,7 @@ PROBES: list[dict] = [
     },
     {
         "name": "consistent_with_corpus",
+        "kind": "posture",
         "training": [{"id": "symphony_workflow:probe1", "value": {
             "permission_posture": {
                 "claude_skip_permissions": False,
@@ -132,16 +160,36 @@ PROBES: list[dict] = [
         "candidate": {"claude": {"skip_permissions": False, "permission_mode": "default"}},
         "expected_verdict": "posture_consistent",
     },
+    {
+        "name": "permission_config_ok_via_allowed_tools",
+        "kind": "permission_config",
+        "candidate": {"claude": {"skip_permissions": False,
+                                 "allowed_tools": ["Bash", "Read"]}},
+        "expected_verdict": "permission_config_ok",
+    },
+    {
+        "name": "permission_config_error_no_fence",
+        "kind": "permission_config",
+        "candidate": {"claude": {"skip_permissions": False, "allowed_tools": []}},
+        "expected_verdict": "permission_config_error",
+    },
 ]
 
 
 def run_probes() -> list[dict]:
     out = []
     for probe in PROBES:
-        fitted = fit(probe["training"])
-        result = evaluate(probe["candidate"], fitted_modes=fitted,
-                          training_rows=probe["training"])
-        out.append({"name": probe["name"], "expected": probe["expected_verdict"],
-                    "actual": result["verdict"],
-                    "pass": result["verdict"] == probe["expected_verdict"]})
+        kind = probe.get("kind", "posture")
+        if kind == "permission_config":
+            result = check_permission_config(probe["candidate"])
+            out.append({"name": probe["name"], "expected": probe["expected_verdict"],
+                        "actual": result["verdict"],
+                        "pass": result["verdict"] == probe["expected_verdict"]})
+        else:
+            fitted = fit(probe["training"])
+            result = evaluate(probe["candidate"], fitted_modes=fitted,
+                              training_rows=probe["training"])
+            out.append({"name": probe["name"], "expected": probe["expected_verdict"],
+                        "actual": result["verdict"],
+                        "pass": result["verdict"] == probe["expected_verdict"]})
     return out

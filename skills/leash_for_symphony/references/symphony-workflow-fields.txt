@@ -11,46 +11,44 @@
 # "#" are comments; blank lines are skipped.
 #
 # Sources, commit-pinned at proposal write-time:
-#   - openai/symphony SPEC.md (sections 4.1.1, 5.3.4, 6.3, 8.2, 8.5,
-#     9.3, 10.4, 10.5, 11, 13.5, 13.7, Appendix A) — verified 2026-04-30
 #   - hawkymisc/cc-symphony SPEC_GITHUB.md + WORKFLOW.md — verified
-#     2026-04-30
+#     2026-05-08
 #
 # Updating this file is itself a 0.4 grading event. The line-set is the
 # 0.1 dataset; verify.py confirms the data points the collector emits
 # match the file as committed.
 
-# tracker — issue source (SPEC §11)
+# tracker — issue source
 tracker.kind
+tracker.repo
 tracker.api_key
 tracker.project_slug
-tracker.repo_owner
-tracker.repo_name
 tracker.graphql_endpoint
 tracker.active_states
 tracker.terminal_states
+tracker.labels
 
-# polling — cadence (SPEC §6.3, §8.5)
+# polling — cadence
 polling.interval_ms
 
-# workspace — per-issue cwd (SPEC §5, §9.3)
+# workspace — per-issue cwd
 workspace.root
 
-# hooks — workspace lifecycle (SPEC §5.3.4)
+# hooks — workspace lifecycle
 hooks.after_create
 hooks.before_run
 hooks.after_run
 hooks.before_remove
 hooks.timeout_ms
 
-# agent — concurrency and retry (SPEC §6.3, §8.2)
+# agent — concurrency and retry
 agent.adapter
 agent.max_concurrent_agents
 agent.max_concurrent_agents_by_state
 agent.max_turns
 agent.max_retry_backoff_ms
 
-# codex — Codex-runtime config (SPEC §10, §13.5)
+# codex — Codex-runtime config
 codex.command
 codex.turn_timeout_ms
 codex.stall_timeout_ms
@@ -67,9 +65,37 @@ claude.skip_permissions
 claude.turn_timeout_ms
 claude.stall_timeout_ms
 
-# server — observability HTTP API (SPEC §13.7, OPTIONAL)
+# server — observability HTTP API (OPTIONAL)
 server.port
 
-# worker — SSH execution (SPEC Appendix A)
+# worker — SSH execution
 worker.ssh_hosts
 worker.max_concurrent_agents_per_host
+
+# ---------------------------------------------------------------------------
+# Body template variable taxonomy (Liquid-compatible, strict).
+#
+# The WORKFLOW.md body (below the front-matter fence) is a Liquid template.
+# Only the variables listed below are injected by cc-symphony. References
+# to any other variable name will render as empty string without error.
+#
+# Issue-level variables:
+#   {{ issue.id }}          — internal UUID
+#   {{ issue.identifier }}  — human-readable ID (e.g. "4")
+#   {{ issue.title }}       — issue title string
+#   {{ issue.description }} — issue body markdown
+#   {{ issue.priority }}    — priority label string (e.g. "medium")
+#   {{ issue.state }}       — current state name (e.g. "In Progress")
+#   {{ issue.branch_name }} — git branch cc-symphony provisioned
+#   {{ issue.url }}         — URL to the issue on the tracker
+#   {{ issue.labels }}      — list of label strings
+#   {{ issue.blocked_by }}  — list of blocking issue identifiers
+#   {{ issue.created_at }}  — ISO 8601 timestamp
+#   {{ issue.updated_at }}  — ISO 8601 timestamp
+#
+# Run-level variables:
+#   {{ attempt }}           — integer retry count (1 on first dispatch)
+#
+# Tracker-level convenience:
+#   {{ repo }}              — the tracker.repo value ("owner/repo")
+# ---------------------------------------------------------------------------

@@ -31,7 +31,8 @@ from .signals import symphony_permission_posture
 
 DECISION_POINTS = [
     ("workflow_field_validity", "symphony_field_decl"),          # 0.1 dataset membership
-    ("permission_posture_check", "symphony_permission_posture"), # 0.2 signal
+    ("permission_posture_check", "symphony_permission_posture"), # 0.2 signal — posture drift
+    ("permission_config_check", "symphony_permission_posture"),  # cross-field permission rule
     ("emission_gate", "emission_readiness"),                     # 0.2 shared signal
 ]
 
@@ -41,9 +42,12 @@ DATASETS = SKILL_ROOT / "datasets"
 OUTPUTS = SKILL_ROOT / "outputs"
 
 DEFAULT_CANDIDATE = {
-    "candidate_id": "default-low-risk", "tracker": {"kind": "github", "repo_owner": "example", "repo_name": "example"},
+    "candidate_id": "default-low-risk",
+    "tracker": {"kind": "github", "repo": "example/example", "api_key": "$GITHUB_TOKEN"},
     "polling": {"interval_ms": 30000}, "workspace": {"root": "~/symphony_workspaces"},
-    "agent": {"adapter": "claude", "max_concurrent_agents": 2}, "claude": {"skip_permissions": False, "permission_mode": "default"},
+    "agent": {"adapter": "claude", "max_concurrent_agents": 2},
+    "claude": {"skip_permissions": False, "permission_mode": "default",
+               "allowed_tools": ["Bash", "Read", "Write", "Edit", "Grep", "Glob"]},
 }
 
 
@@ -78,6 +82,46 @@ def _decision(decision_id: str, fence_id: str, *, input_payload, result, branch:
             "input_payload": input_payload, "result": result, "branch_taken": branch}
 
 
+def _run_emission_gate(log: list[dict]) -> tuple[dict, dict]:
+    """Runs the emission_readiness decision; returns (bundle_state, er_result)."""
+    ex_rows = dp.read_jsonl(DATASETS / "exemplar_bundle_state.jsonl")
+    bundle_state = {
+        "dataset_sizes": {mod.COLLECTOR_ID: len(dp.read_jsonl(DATASETS / f"{mod.COLLECTOR_ID}.jsonl"))
+                          for mod in COLLECTORS},
+        "all_collectors_passed": True,
+    }
+    er_fitted = emission_readiness.fit(ex_rows)
+    er_result = emission_readiness.evaluate(bundle_state,
+                                            fitted=er_fitted, training_rows=ex_rows)
+    log.append(_decision("emission_gate", "emission_readiness",
+                         input_payload=bundle_state, result=er_result,
+                         branch=er_result["verdict"]))
+    return bundle_state, er_result
+
+
+def _run_posture_checks(candidate: dict, log: list[dict], vocal: bool) -> dict | None:
+    """Runs permission_posture_check and permission_config_check decisions.
+    Returns a rejection outcome dict if either check fails, else None."""
+    sw_rows = dp.read_jsonl(DATASETS / "symphony_workflow.jsonl")
+    fitted = symphony_permission_posture.fit(sw_rows)
+    pp_result = symphony_permission_posture.evaluate(
+        candidate, fitted_modes=fitted, training_rows=sw_rows)
+    log.append(_decision("permission_posture_check", "symphony_permission_posture",
+                         input_payload=candidate, result=pp_result,
+                         branch=pp_result["verdict"]))
+    if pp_result["verdict"] == "posture_drift":
+        return {"verdict": "rejected", "reason": "permission_posture_drift",
+                "drifted_keys": pp_result["drifted_keys"], "vocal": vocal}
+    pc_result = symphony_permission_posture.check_permission_config(candidate)
+    log.append(_decision("permission_config_check", "symphony_permission_posture",
+                         input_payload=candidate, result=pc_result,
+                         branch=pc_result["verdict"]))
+    if pc_result["verdict"] == "permission_config_error":
+        return {"verdict": "rejected", "reason": "permission_config_error",
+                "config_reason": pc_result["reason"], "vocal": vocal}
+    return None
+
+
 def evaluate_candidate(candidate: dict) -> tuple[list[dict], dict]:
     log: list[dict] = []
     state = ls.read(SKILL_ROOT)
@@ -106,30 +150,12 @@ def evaluate_candidate(candidate: dict) -> tuple[list[dict], dict]:
     if branch1 == "unknown_fields":
         return log, {"verdict": "rejected", "reason": "unknown_workflow_fields",
                      "unknown_fields": unknown, "vocal": vocal}
-    # Decision 2: permission_posture (0.2 signal)
-    sw_rows = dp.read_jsonl(DATASETS / "symphony_workflow.jsonl")
-    fitted = symphony_permission_posture.fit(sw_rows)
-    pp_result = symphony_permission_posture.evaluate(
-        candidate, fitted_modes=fitted, training_rows=sw_rows)
-    log.append(_decision("permission_posture_check", "symphony_permission_posture",
-                         input_payload=candidate, result=pp_result,
-                         branch=pp_result["verdict"]))
-    if pp_result["verdict"] == "posture_drift":
-        return log, {"verdict": "rejected", "reason": "permission_posture_drift",
-                     "drifted_keys": pp_result["drifted_keys"], "vocal": vocal}
+    # Decisions 2 + 2b: posture + permission_config
+    rejection = _run_posture_checks(candidate, log, vocal)
+    if rejection is not None:
+        return log, rejection
     # Decision 3: emission_readiness (0.2 shared signal)
-    ex_rows = dp.read_jsonl(DATASETS / "exemplar_bundle_state.jsonl")
-    bundle_state = {
-        "dataset_sizes": {mod.COLLECTOR_ID: len(dp.read_jsonl(DATASETS / f"{mod.COLLECTOR_ID}.jsonl"))
-                          for mod in COLLECTORS},
-        "all_collectors_passed": True,
-    }
-    er_fitted = emission_readiness.fit(ex_rows)
-    er_result = emission_readiness.evaluate(bundle_state,
-                                            fitted=er_fitted, training_rows=ex_rows)
-    log.append(_decision("emission_gate", "emission_readiness",
-                         input_payload=bundle_state, result=er_result,
-                         branch=er_result["verdict"]))
+    bundle_state, er_result = _run_emission_gate(log)
     return log, {
         "verdict": "0.4" if er_result["verdict"] == "ready" else "candidate",
         "candidate_workflow": candidate,
