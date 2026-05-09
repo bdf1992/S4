@@ -1,5 +1,10 @@
 """Unified entry point for the boards system.
 
+Card schema (column / lane / payload, render-shape projection): see
+[boards/schema.md](schema.md). Pays D-006 by formalizing the geometry
+against published kanban traditions (Anderson 2010, Atlassian Jira,
+Anderson/Ries CFD).
+
 Usage:
   python -m boards                            # list available boards
   python -m boards collect <name>             # run F2 collector, write dataset

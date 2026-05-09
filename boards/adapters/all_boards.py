@@ -1,5 +1,9 @@
 """Adapter: meta-board over all sub-board adapters.
 
+Card schema (column / lane / payload): see [boards/schema.md](../schema.md).
+The needs_attention vs healthy column axis is the cumulative-flow
+projection cited there (Anderson 2010 §"Cumulative Flow Diagram"; Ries 2011).
+
 Each sub-board's cards() function is invoked; the result is summarized
 into one meta-card per board. Column axis is needs_attention vs healthy
 (a board needs attention if it has any open + load_bearing cards).

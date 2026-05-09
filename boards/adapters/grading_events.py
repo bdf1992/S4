@@ -1,5 +1,9 @@
 """Adapter: foundations/grading-events.md → kanban cards.
 
+Card schema (column / lane / payload): see [boards/schema.md](../schema.md).
+Status enum (pending / approved / resolved / rejected / superseded) is the
+workflow-state column axis from Anderson 2010.
+
 Parses H2 sections of the form
     ## Event NNN — <subject> (<STATUS>[ <YYYY-MM-DD>])
 into baseline card shape and feeds them to boards.render.
