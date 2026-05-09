@@ -1,0 +1,13 @@
+{
+  "id": "D-008",
+  "subject": "skills/leash_for_symphony/references/symphony-workflow-fields.txt — taxonomy out of sync with cc-symphony SPEC_GITHUB.md",
+  "kind": "authored_not_grounded",
+  "principal": "The field taxonomy in symphony-workflow-fields.txt drifted from hawkymisc/cc-symphony SPEC_GITHUB.md (verified 2026-05-08). Concrete deltas: (1) lists tracker.repo_owner + tracker.repo_name as separate fields — upstream uses a single tracker.repo string in 'owner/repo' format; (2) missing tracker.api_key (required, supports $VAR interpolation, $GITHUB_TOKEN canonical); (3) missing tracker.labels (optional operator-facing field that filters which issues get dispatched); (4) missing cross-field rule: claude.skip_permissions=true OR non-empty claude.allowed_tools required for unattended operation — absent either, upstream emits permission_config_error; (5) missing template variable spec for the body (Liquid-compatible strict set: issue.id, issue.identifier, issue.title, issue.description, issue.priority, issue.state, issue.branch_name, issue.url, issue.labels, issue.blocked_by, issue.created_at, issue.updated_at, plus attempt). The leash skill graded a WORKFLOW.md green against its own stale view while the upstream would reject with invalid_tracker_repo_format, missing_tracker_api_key, permission_config_error.",
+  "interest": "The leash-for-symphony chain validation produces false-confidence green on candidates that upstream cc-symphony would reject. Any operator relying on the leash skill's verdict to ship a WORKFLOW.md risks three hard validation failures at deploy time. The template variable list being absent means the orchestrate body-template check has no ground truth to verify against.",
+  "payoff": "Rewrite references/symphony-workflow-fields.txt replacing tracker.repo_owner + tracker.repo_name with tracker.repo, adding tracker.api_key and tracker.labels. Extend signals/symphony_permission_posture.py to check the cross-field rule (skip_permissions=true OR non-empty allowed_tools). Fix orchestrate.py DEFAULT_CANDIDATE to use the correct single-field tracker.repo. Add body template variable taxonomy as a comment block in the references file. All changes grounded in SPEC_GITHUB.md verified 2026-05-08.",
+  "severity": "load_bearing",
+  "status": "open",
+  "re_trigger": "upstream cc-symphony SPEC_GITHUB.md changes tracker field shape again",
+  "created_at": "2026-05-08",
+  "last_updated_at": "2026-05-08"
+}
