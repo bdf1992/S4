@@ -8,6 +8,7 @@ version = "0.0.1"
 description = "Experimental harness for the 0.4 protocol — runs the 3.0→1.0→2.0→3.0→4.0 chain bottom-up to test whether 4.0 becomes producible from current-day primitives."
 requires-python = ">=3.10"
 dependencies = [
+    "pydantic>=2.0",
     "radon>=6.0",
     "prov>=2.0",
 ]
