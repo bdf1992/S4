@@ -68,51 +68,32 @@ def _collector_pointer() -> dict:
     }
 
 
-def _walk_inner_hooks(pat: str, event: str, matcher: str, inner: list) -> list[dict]:
-    rows: list[dict] = []
-    for idx, h in enumerate(inner):
-        if not isinstance(h, dict):
-            continue
-        cmd = h.get("command", "")
-        if not isinstance(cmd, str):
-            continue
-        rows.append({
-            "scope": _scope_of(pat), "settings_path": pat,
-            "event": event, "matcher": matcher, "hook_index": idx,
-            "command": cmd,
-            "command_hash": "sha256:" + hashlib.sha256(cmd.encode()).hexdigest()[:16],
-        })
-    return rows
-
-
-def _walk_event_matchers(pat: str, event: str, matcher_list: list) -> list[dict]:
-    rows: list[dict] = []
-    for m_entry in matcher_list:
-        if not isinstance(m_entry, dict):
-            continue
-        matcher = m_entry.get("matcher", "")
-        inner = m_entry.get("hooks", [])
-        if not isinstance(inner, list):
-            continue
-        rows.extend(_walk_inner_hooks(pat, event, matcher, inner))
-    return rows
+def _safe(x, t):
+    """Centralized type-guard: return x if it's an instance of t, else an empty t().
+    Absorbs all isinstance-checks for malformed external JSON into one place."""
+    return x if isinstance(x, t) else t()
 
 
 def _walk_settings(pat: str, p: Path) -> list[dict]:
     try:
-        data = json.loads(p.read_text(encoding="utf-8"))
+        data = _safe(json.loads(p.read_text(encoding="utf-8")), dict)
     except json.JSONDecodeError:
         return []
-    if not isinstance(data, dict):
-        return []
-    hooks_block = data.get("hooks", {})
-    if not isinstance(hooks_block, dict):
-        return []
+    scope = _scope_of(pat)
     rows: list[dict] = []
-    for event, matcher_list in hooks_block.items():
-        if not isinstance(matcher_list, list):
-            continue
-        rows.extend(_walk_event_matchers(pat, event, matcher_list))
+    for event, matcher_list in _safe(data.get("hooks"), dict).items():
+        for m_entry in _safe(matcher_list, list):
+            m = _safe(m_entry, dict)
+            matcher = m.get("matcher", "")
+            for idx, h_entry in enumerate(_safe(m.get("hooks"), list)):
+                cmd = _safe(h_entry, dict).get("command", "")
+                if isinstance(cmd, str):
+                    rows.append({
+                        "scope": scope, "settings_path": pat,
+                        "event": event, "matcher": matcher, "hook_index": idx,
+                        "command": cmd,
+                        "command_hash": "sha256:" + hashlib.sha256(cmd.encode()).hexdigest()[:16],
+                    })
     return rows
 
 
