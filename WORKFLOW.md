@@ -56,21 +56,30 @@ You are a coding agent working under the franchise kit at {{ repo }}.
 
 The operator's review surface is **the acceptance walkthrough**, not the diff or the commit journey. Their job is to confirm the outcome, not to audit how you got there. So your completion is *not* a step-by-step report — it's a demonstration of the outcome.
 
-When your work is complete and the PR is open:
+When your work is complete and the PR is open, run **one** call:
 
-1. **Post the acceptance walkthrough as a comment on the issue.** It must demonstrate the outcome named in the issue's success criteria:
-   - Verifier output verbatim (e.g., `python -m skills.leash_for_hooks.verify` → `19 self-checks, 0 failures`)
-   - Before/after of measurable state for any behavior change (e.g., `radon cc` output before vs. after for a complexity refactor)
-   - Each success criterion checked against ground truth — show *the criterion* and *the evidence it holds*, one per line
-   - Pointers (file:line) to the artifacts that changed, for the operator to spot-check if they want — but the walkthrough must stand on its own without requiring them to crawl the diff
+```
+python -m skills.symphony mark-done {{ issue.identifier }} <<'WALKTHROUGH'
+[your acceptance walkthrough — see content guide below]
+WALKTHROUGH
+```
 
-   Do not narrate steps. Do not list what you did. The operator should be able to read this comment and decide approve/reject without opening a single file.
+The skill: (1) adds `symphony-done`, (2) removes `symphony-doing`, (3) sets the project Status to In Review (the kanban column the operator reviews from), (4) posts your walkthrough as a comment on the issue. One verbal directive from you to the project board. **Do not** call `gh issue edit ... --add-label symphony-done` directly — that bypasses the project Status update and leaves the kanban out of sync.
 
-2. Add the `symphony-done` label:
-   ```
-   gh issue edit {{ issue.identifier }} --repo {{ repo }} --add-label symphony-done
-   ```
-3. **Do NOT close the issue** — the operator reviews via `python -m skills.symphony review {{ issue.identifier }}` and approves via `python -m skills.symphony approve {{ issue.identifier }} --merge squash`. cc-symphony's reconciliation will then remove `symphony-doing`.
+**Do NOT close the issue** — that's the operator's call via `python -m skills.symphony approve {{ issue.identifier }} --merge squash`.
+
+### Acceptance walkthrough content (what to put in the heredoc)
+
+The walkthrough must demonstrate the outcome named in the issue's success criteria:
+
+- Verifier output verbatim (e.g., `python -m skills.leash_for_hooks.verify` → `23 self-checks, 0 failures`)
+- Before/after of measurable state for any behavior change (e.g., `radon cc` before vs. after for a complexity refactor)
+- Each success criterion checked against ground truth — show *the criterion* and *the evidence it holds*, one per line
+- File:line pointers to the artifacts that changed, for the operator to spot-check if they want — but the walkthrough must stand on its own without requiring them to crawl the diff
+
+Do not narrate steps. Do not list what you did. The operator should be able to read this comment and decide approve/reject without opening a single file.
+
+If for some reason the skill's `mark-done` is unavailable (e.g., the workspace is missing the skill), fall back to: `gh issue edit {{ issue.identifier }} --repo {{ repo }} --add-label symphony-done` plus a manual comment, and explain the fallback in the PR body so the operator can sync the kanban manually.
 
 {% if attempt %}
 
