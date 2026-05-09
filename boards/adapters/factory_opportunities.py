@@ -1,5 +1,9 @@
 """Adapter: factory opportunities — proposals + unaddressed gap-kinds → cards.
 
+Card schema (column / lane / payload): see [boards/schema.md](../schema.md).
+Columns mapped → proposed → promoted → rejected follow Anderson 2010's
+workflow-state design.
+
 Live-adapter shape (mirrors boards.adapters.grading_events). The dataset
 collector at boards.collectors.factory_opportunities_cards is preferred
 when present; this adapter is the fallback path the meta-board uses.

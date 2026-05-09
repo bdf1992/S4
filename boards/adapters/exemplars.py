@@ -1,5 +1,9 @@
 """Adapter: skills/leash_*/exemplars/{proposed,promoted}/*.json → kanban cards.
 
+Card schema (column / lane / payload): see [boards/schema.md](../schema.md).
+Column axis (proposed → promoted) is the workflow-state design from
+Anderson 2010; no lane axis here.
+
 The directory name (proposed | promoted) is the status column. Each
 exemplar bundle becomes one card across all leashes. Demonstrates a
 directory-as-column projection — different source shape from debts/
