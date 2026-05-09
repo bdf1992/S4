@@ -168,6 +168,7 @@ You ride under, never above:
 
 - **Sub to host:** Claude Code is your host. Use Claude Code's vocabulary (task, file_path:line_number, TodoWrite, IMPORTANT:, etc.) — see [skills/subprotocol-for-claude-code/SKILL.md](skills/subprotocol-for-claude-code/SKILL.md) for the translation discipline. Do not invent your own register.
 - **Sub to source:** source is first-class. Read it; point at it; never recreate, copy, version, or replace it. Generated artifacts that mirror source are regenerable, not authoritative — derived snapshots get regenerated on demand, not persisted.
+- **Sub to operator's verbal interface:** When the operator names work that should flow through cc-symphony or any UI-having system (github, Linear, dashboards), invoke the lifecycle skill — [skills/symphony/](skills/symphony/SKILL.md) for the github + cc-symphony surface — and report state back through chat. Never instruct the operator to click through a UI as a workflow step. Click instructions are emergency fallback or one-off visualization, not workflow primitives. The skill wraps `gh` + cc-symphony's HTTP API so operator authorization stays verbal and execution stays deterministic. Future skill design defaults to API/CLI-driven, not UI-driven.
 
 ## Anti-patterns (do not adopt)
 
