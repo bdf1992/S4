@@ -6,8 +6,12 @@
   "interest": "The leash-for-symphony chain validation produces false-confidence green on candidates that upstream cc-symphony would reject. Any operator relying on the leash skill's verdict to ship a WORKFLOW.md risks three hard validation failures at deploy time. The template variable list being absent means the orchestrate body-template check has no ground truth to verify against.",
   "payoff": "Rewrite references/symphony-workflow-fields.txt replacing tracker.repo_owner + tracker.repo_name with tracker.repo, adding tracker.api_key and tracker.labels. Extend signals/symphony_permission_posture.py to check the cross-field rule (skip_permissions=true OR non-empty allowed_tools). Fix orchestrate.py DEFAULT_CANDIDATE to use the correct single-field tracker.repo. Add body template variable taxonomy as a comment block in the references file. All changes grounded in SPEC_GITHUB.md verified 2026-05-08.",
   "severity": "load_bearing",
-  "status": "open",
+  "status": "closed_paid",
   "re_trigger": "upstream cc-symphony SPEC_GITHUB.md changes tracker field shape again",
   "created_at": "2026-05-08",
-  "last_updated_at": "2026-05-08"
+  "last_updated_at": "2026-05-08",
+  "closure": {
+    "evidence": "commit 8fa035a (issue-4): references/symphony-workflow-fields.txt rewritten (tracker.repo, api_key, labels, body template taxonomy); symphony_permission_posture.py extended with check_permission_config() and two new probes; orchestrate.py DEFAULT_CANDIDATE fixed and permission_config_check decision point added; verify.py declared list updated. verify: 18/18 self-checks green.",
+    "closed_at": "2026-05-08"
+  }
 }
