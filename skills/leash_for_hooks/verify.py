@@ -29,6 +29,7 @@ from skills.leash_for_hooks.collectors import (llm_sdk_denylist, hook_event_decl
 from skills.leash_for_hooks.lib import audit, collection_program as cp, data_point as dp
 from skills.leash_for_hooks.lib import leash_state as ls
 from skills.leash_for_hooks.lib import pointer as ptr
+from skills.leash_for_hooks.lib import value_schema_validator as vsv
 from skills.leash_for_hooks.resolvers import collector as collector_resolver
 from skills.leash_for_hooks.resolvers import data_point as data_point_resolver
 from skills.leash_for_hooks.resolvers import file_line as file_line_resolver
@@ -223,6 +224,15 @@ def _check_output_bundle(bundle_dir: Path) -> list[dict]:
     return out
 
 
+def _check_value_schema_conformance() -> list[dict]:
+    out = []
+    for mod in COLLECTORS:
+        ok, vios = vsv.validate_collector_output(mod)
+        out.append(_check(mod.COLLECTOR_ID, "value_schema_conformance",
+                          "pass" if ok else "fail", violations=vios[:5]))
+    return out
+
+
 def collect(source_state: str) -> list[dict]:
     denylist = _denylist_set()
     rows: list[dict] = []
@@ -232,6 +242,7 @@ def collect(source_state: str) -> list[dict]:
     rows += _check_data_points()
     rows += _check_orchestration_decision_points()
     rows += _check_leash_state()
+    rows += _check_value_schema_conformance()
     if len(sys.argv) > 1:
         bundle = Path(sys.argv[1])
         if not bundle.is_absolute():
