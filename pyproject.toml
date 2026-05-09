@@ -9,6 +9,7 @@ description = "Experimental harness for the 0.4 protocol — runs the 3.0→1.0�
 requires-python = ">=3.10"
 dependencies = [
     "radon>=6.0",
+    "prov>=2.0",
 ]
 
 [tool.setuptools.packages.find]

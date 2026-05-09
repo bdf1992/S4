@@ -5,7 +5,7 @@ Rejects programs that:
     NOT as raw lines from the source file — see Foundation 2),
   - directly import banned-nondeterminism modules (`random`, `time`,
     `uuid`, `socket`); `datetime` is allowed only inside lib/data_point
-    (the single localized use of wall-clock for advisory `collected_at`),
+    (the single localized use of wall-clock for advisory `prov:wasGeneratedAtTime`),
   - exceed the audit budget (cyclomatic complexity per McCabe 1976,
     NIST SP 500-235; computed via radon's cc_visit, defaults of <= 10
     per function and <= 30 cumulative per module — see

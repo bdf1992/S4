@@ -88,8 +88,8 @@ def _check_collectors(denylist: frozenset[str]) -> list[dict]:
                           "pass" if ok else "fail", violations=vios))
         ss = mod.compute_source_state()
         rows1 = mod.collect(ss); rows2 = mod.collect(ss)
-        same = ([{**r, "provenance": {**r["provenance"], "collected_at": "X"}} for r in rows1]
-                == [{**r, "provenance": {**r["provenance"], "collected_at": "X"}} for r in rows2])
+        same = ([{**r, "provenance": {**r["provenance"], "prov:wasGeneratedAtTime": "X"}} for r in rows1]
+                == [{**r, "provenance": {**r["provenance"], "prov:wasGeneratedAtTime": "X"}} for r in rows2])
         out.append(_check(mod.COLLECTOR_ID, "determinism",
                           "pass" if same else "fail"))
     return out
